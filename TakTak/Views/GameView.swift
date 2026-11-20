@@ -40,8 +40,9 @@ struct GameView: View {
                     coinsEarned: r.coins,
                     canContinue: !scene.hasContinued,
                     onContinue: {
-                        // TODO: Burada ödüllü reklam gösterilecek (ör. AdMob RewardedAd).
-                        // Reklam başarıyla izlenince scene.revive() çağrılmalı.
+                        // Şimdilik her oyunda bir kez ücretsiz devam hakkı.
+                        // İleride ödüllü reklam eklenirse (ör. AdMob RewardedAd), reklam izlenince
+                        // scene.revive() çağrılmalı ve butonun yazısı buna göre değiştirilmeli.
                         withAnimation(.easeOut(duration: 0.2)) { result = nil }
                         scene.revive()
                     },

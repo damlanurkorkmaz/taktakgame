@@ -1,0 +1,55 @@
+# Codemagic: Tak Tak! iOS derleme ve App Store Connect'e yükleme
+#
+# Kullanmadan önce:
+# 1. Codemagic > Team settings > Team integrations > Developer Portal'a App Store Connect API anahtarını ekle.
+#    Anahtarın Codemagic'teki adını aşağıdaki `app_store_connect:` satırına yaz.
+# 2. Apple Developer hesabında bundle ID'yi (com.damlanurkorkmaz.taktak) kaydet,
+#    App Store Connect'te uygulama kaydını oluştur.
+# 3. App Store Connect > Uygulama > Genel Bilgiler'deki "Apple ID" numarasını APP_STORE_APPLE_ID'ye yaz.
+# 4. Codemagic > Code signing identities'e bir "Apple Distribution" sertifikası ekle
+#    (ya da Codemagic'e oluşturt). Profil, aşağıdaki ios_signing ile otomatik alınır.
+
+workflows:
+  ios-app-store:
+    name: Tak Tak – App Store
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: TakTak ASC Key   # Codemagic'teki API anahtarının adı
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.damlanurkorkmaz.taktak
+      vars:
+        XCODE_PROJECT: "TakTak.xcodeproj"
+        XCODE_SCHEME: "TakTak"
+        APP_STORE_APPLE_ID: 0000000000      # App Store Connect'teki Apple ID ile değiştir
+      xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Kod imzalama ayarlarını projeye uygula
+        script: xcode-project use-profiles
+      - name: Build numarasını artır
+        script: |
+          cd $CM_BUILD_DIR
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $(($LATEST + 1))
+      - name: IPA oluştur
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false   # İlk sürümü TestFlight'ta deneyip mağazaya elle gönder

@@ -4,12 +4,9 @@ struct ShopView: View {
     @EnvironmentObject private var store: GameStore
     var onBack: () -> Void
 
-    @State private var tab = 0
     @State private var toast: String?
     @State private var toastTask: Task<Void, Never>?
-    @State private var showNoAds = false
 
-    private let tabs = ["Çekiçler", "Tahtalar", "Çiviler"]
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
@@ -28,62 +25,14 @@ struct ShopView: View {
                 CoinPill(text: store.coins.tk, iconSize: 20)
             }
 
-            HStack(spacing: 6) {
-                ForEach(tabs.indices, id: \.self) { i in
-                    Button {
-                        tab = i
-                        Haptics.tap()
-                    } label: {
-                        Text(tabs[i])
-                            .font(TKFont.black(15))
-                            .foregroundStyle(tab == i ? Color.tkBg : Color.tkMuted)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(RoundedRectangle(cornerRadius: 13).fill(tab == i ? Color.tkYellow : Color.clear))
-                            .contentShape(Rectangle())
+            ScrollView(showsIndicators: false) {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(HammerVariant.allCases) { h in
+                        hammerCard(h)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(tab == i ? .isSelected : [])
                 }
+                .padding(.vertical, 24)
             }
-            .padding(6)
-            .background(RoundedRectangle(cornerRadius: 18).fill(Color.tkPanel))
-            .padding(.top, 24)
-
-            if tab == 0 {
-                ScrollView(showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(HammerVariant.allCases) { h in
-                            hammerCard(h)
-                        }
-                    }
-                    .padding(.vertical, 18)
-                }
-            } else {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: "shippingbox.fill")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(Color.tkMuted)
-                    Text("Yakında")
-                        .font(TKFont.display(32))
-                    Text(tab == 1 ? "Yeni tahta desenleri yolda." : "Yeni çivi türleri yolda.")
-                        .font(TKFont.extraBold(15))
-                        .foregroundStyle(Color.tkMuted)
-                }
-                Spacer()
-            }
-
-            Button { showNoAds = true } label: {
-                Label("Reklamları kaldır", systemImage: "nosign")
-                    .font(TKFont.black(16))
-                    .foregroundStyle(Color.tkCream)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.tkPanelLine, lineWidth: 3))
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PressableStyle())
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -93,15 +42,9 @@ struct ShopView: View {
         .overlay(alignment: .bottom) {
             if let toast {
                 Toast(text: toast)
-                    .padding(.bottom, 90)
+                    .padding(.bottom, 40)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-        }
-        .alert("Reklamları kaldır", isPresented: $showNoAds) {
-            Button("Tamam", role: .cancel) {}
-        } message: {
-            // TODO: StoreKit 2 ile "reklamsız" uygulama içi satın alma eklenecek.
-            Text("Uygulama içi satın alma bir sonraki sürümde gelecek.")
         }
     }
 

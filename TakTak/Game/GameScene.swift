@@ -178,7 +178,7 @@ final class GameScene: SKScene, ObservableObject {
         resetRun()
     }
 
-    /// "Reklam izle, devam et": eğilen çiviyi yenisiyle değiştirir. Oyun başına bir kez.
+    /// "Devam et": eğilen çiviyi yenisiyle değiştirir. Oyun başına bir kez.
     func revive() {
         guard isOver, !hasContinued else { return }
         hasContinued = true

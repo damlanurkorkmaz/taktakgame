@@ -30,9 +30,9 @@ struct GameOverView: View {
                 if canContinue {
                     Button(action: onContinue) {
                         HStack(spacing: 10) {
-                            Image(systemName: "play.rectangle.fill")
+                            Image(systemName: "heart.fill")
                                 .font(.system(size: 20, weight: .bold))
-                            Text("Reklam izle, kaldığın yerden devam et")
+                            Text("Kaldığın yerden devam et (1 hak)")
                                 .font(TKFont.black(16))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)

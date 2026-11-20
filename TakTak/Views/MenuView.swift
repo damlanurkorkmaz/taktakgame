@@ -7,7 +7,6 @@ struct MenuView: View {
     var onDaily: () -> Void
 
     @State private var showSettings = false
-    @State private var showSoon = false
 
     var body: some View {
         GeometryReader { geo in
@@ -70,7 +69,6 @@ struct MenuView: View {
                 HStack(spacing: 12) {
                     navButton("Mağaza", icon: "bag.fill", dot: false, action: onShop)
                     navButton("Ödül", icon: "gift.fill", dot: store.dailyState.canClaim, action: onDaily)
-                    navButton("Sıralama", icon: "chart.bar.fill", dot: false) { showSoon = true }
                 }
             }
             .padding(.horizontal, 24)
@@ -83,11 +81,6 @@ struct MenuView: View {
             SettingsView()
                 .environmentObject(store)
                 .presentationDetents([.height(300)])
-        }
-        .alert("Sıralama yakında", isPresented: $showSoon) {
-            Button("Tamam", role: .cancel) {}
-        } message: {
-            Text("Game Center sıralaması bir sonraki sürümde gelecek.")
         }
     }
 

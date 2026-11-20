@@ -42,13 +42,29 @@ TakTak/
 
 Zorluk ayarları `TakTak/Game/GameScene.swift` içindeki `Tuning` bölümündedir: ibre hızı, bölge genişlikleri, altın çivi olasılığı. Günlük ödül miktarları `GameStore.dailyRewards`, çekiç fiyatları ise `HammerVariant.price` içindedir.
 
-## Yapılacaklar (App Store öncesi)
+## Codemagic ile App Store'a gönderme
 
-- [ ] **Ödüllü reklam:** "Reklam izle, devam et" butonu şu an doğrudan devam ettiriyor. `GameView.swift` içindeki `TODO` noktasına bir reklam SDK'sı (ör. Google AdMob) bağlanmalı.
-- [ ] **Reklamsız satın alma:** Mağazadaki "Reklamları kaldır" butonuna StoreKit 2 ile uygulama içi satın alma eklenmeli.
-- [ ] **Sıralama:** Game Center liderlik tablosu.
-- [ ] Tahta ve çivi temaları (mağazadaki "Yakında" sekmeleri).
-- [ ] App Store Connect: ekran görüntüleri, açıklama, gizlilik bilgileri (reklam SDK'sı eklenince gerekecek).
+Depoda hazır bir `codemagic.yaml` var. İlk derlemeden önce:
+
+1. Apple Developer hesabında bundle ID'yi kaydet: `com.damlanurkorkmaz.taktak` (değiştirirsen hem projede hem `codemagic.yaml`'da değiştir).
+2. App Store Connect'te uygulama kaydını oluştur. *Genel Bilgiler*'deki **Apple ID** numarasını `codemagic.yaml`'daki `APP_STORE_APPLE_ID`'ye yaz.
+3. App Store Connect > Kullanıcılar ve Erişim > Entegrasyonlar'dan bir API anahtarı (App Manager rolü) oluştur. Codemagic > Team integrations > Developer Portal'a ekle. Verdiğin adı `codemagic.yaml`'daki `app_store_connect:` satırına yaz.
+4. Codemagic > Code signing identities'e bir Apple Distribution sertifikası ekle (ya da Codemagic'e oluşturt).
+5. Derlemeyi başlat. Başarılı derleme TestFlight'a yüklenir; telefonda deneyip App Store'a elle gönder.
+
+App Store Connect'te ayrıca şunlar gerekir:
+
+- **Gizlilik politikası URL'si** (her uygulama için zorunlu). Uygulama hiçbir veri toplamıyor, kısa bir sayfa yeterli.
+- **Uygulama gizliliği:** "Veri toplanmıyor" (Data Not Collected).
+- **Yaş derecelendirmesi** anketi (şiddet vb. yok, 4+ çıkar).
+- **Ekran görüntüleri:** 6.9" iPhone (ör. iPhone 16 Pro Max simülatörü) için en az bir set.
+
+## Sonraki sürümler için fikirler
+
+- Ödüllü reklam: "Devam et" hakkını reklamla vermek (AdMob vb. eklenince App Privacy bilgileri ve izin metni güncellenmeli)
+- Reklamsız satın alma (StoreKit 2)
+- Game Center sıralaması
+- Tahta ve çivi temaları
 
 ## Lisanslar
 
