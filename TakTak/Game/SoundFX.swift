@@ -1,7 +1,10 @@
 import AVFoundation
+import UIKit
 
 /// Ses efektleri kod ile sentezlenir; ses dosyası gerekmez.
-/// İleride gerçek kayıtlarla değiştirmek için `play(_:)` imzası korunabilir.
+///
+/// Ses oturumu `.playback` + `.mixWithOthers`: telefon sessiz moddayken de çalar ve
+/// arkada çalan müziği durdurmaz. Oyuncu sesi Ayarlar'dan kapatabilir.
 final class SoundFX {
     static let shared = SoundFX()
 
@@ -21,34 +24,62 @@ final class SoundFX {
     private init() {
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
 
-        // .ambient: diğer seslerle karışır ve sessiz modda susar.
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
-
         for _ in 0..<4 {
             let p = AVAudioPlayerNode()
             engine.attach(p)
             engine.connect(p, to: engine.mainMixerNode, format: format)
             players.append(p)
         }
-        engine.mainMixerNode.outputVolume = 0.9
-
+        engine.mainMixerNode.outputVolume = 1.0
         buildBuffers()
+
+        configureSession()
+        engine.prepare()
+        startEngine()
+
+        let nc = NotificationCenter.default
+        // Kulaklık takıp çıkarma vb. ses motorunu durdurur: yeniden başlat.
+        nc.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
+            self?.startEngine()
+        }
+        // Telefon araması gibi kesintiler bitince yeniden başlat.
+        nc.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
+            self?.startEngine()
+        }
+        nc.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.startEngine()
+        }
     }
 
     func play(_ kind: Kind) {
         guard enabled, let buffer = buffers[kind] else { return }
-        if !engine.isRunning {
-            do {
-                try AVAudioSession.sharedInstance().setActive(true)
-                try engine.start()
-            } catch {
-                return
-            }
-        }
+        if !engine.isRunning { startEngine() }
+        guard engine.isRunning else { return }
         let player = players[nextPlayer]
         nextPlayer = (nextPlayer + 1) % players.count
         player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !player.isPlaying { player.play() }
+    }
+
+    // MARK: - Ses motoru
+
+    private func configureSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? session.setActive(true)
+    }
+
+    private func startEngine() {
+        guard !engine.isRunning else { return }
+        configureSession()
+        do {
+            try engine.start()
+            players.forEach { $0.play() }
+        } catch {
+            // Bir sonraki play() çağrısında tekrar denenir.
+        }
     }
 
     // MARK: - Sentez
@@ -80,7 +111,7 @@ final class SoundFX {
             return Float(thump + tock)
         }
 
-        // Eğilme: aşağı kayan, titreşimli "boing"
+        // Eğilme / kaçma: aşağı kayan, titreşimli "boing"
         buffers[.miss] = makeBuffer(duration: 0.45) { t in
             let f = 320 - 220 * min(t / 0.4, 1)
             let wobble = 1 + 0.08 * sin(twoPi * 18 * t)

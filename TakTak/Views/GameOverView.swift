@@ -22,7 +22,7 @@ struct GameOverView: View {
                     .padding(.top, small ? 8 : 28)
 
                 if tall {
-                    bentNail
+                    bentNail(width: geo.size.width - 48)
                         .padding(.top, 12)
                 }
 
@@ -82,9 +82,9 @@ struct GameOverView: View {
         .background(Color.tkBg.ignoresSafeArea())
     }
 
-    private var bentNail: some View {
+    private func bentNail(width: CGFloat) -> some View {
         let img = BeltArt.sceneImage(
-            width: 342,
+            width: min(342, width),
             compact: true,
             nails: [
                 .init(x: 70, state: .driven),

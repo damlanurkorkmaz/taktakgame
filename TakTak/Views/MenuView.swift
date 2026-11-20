@@ -38,9 +38,15 @@ struct MenuView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 8)
 
-                MenuHero(hammer: store.equipped)
-                    .scaleEffect(small ? 0.78 : 1)
+                // Görsel ekran genişliğinde (390); sütunun kenar boşluklarından taşar.
+                // overlay içinde olduğu için sütunun genişliğini etkilemez, ekran kaymaz.
+                Color.clear
+                    .frame(maxWidth: .infinity)
                     .frame(height: small ? 180 : 230)
+                    .overlay {
+                        MenuHero(hammer: store.equipped)
+                            .scaleEffect(small ? 0.78 : 1)
+                    }
                     .padding(.top, 8)
 
                 HStack(spacing: 10) {
