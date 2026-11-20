@@ -5,11 +5,12 @@ import UIKit
 ///
 /// Bant sürekli sola akar, üstündeki çiviler çekicin altından geçer.
 /// Oyuncu, çivi sarı okun üstüne geldiği anda dokunur:
-/// - Tam ortadaysa **mükemmel**: çivi derin girer, seri ve çarpan artar.
-/// - Biraz kaymışsa **iyi**: çivi yarıya girer, seri sıfırlanır.
-/// - Çok kaymışsa çivi **eğilir**: bir can gider.
-/// - Hiç vurulmadan geçen ya da yarım kalan çivi **kaçar**: bir can gider.
+/// - Tam ortadaysa **mükemmel**: çivi tek vuruşta gömülür, 3 puan × seri çarpanı.
+/// - Biraz kaymışsa **iyi**: çivi yarıya girer, 2 puan, seri sıfırlanır.
+/// - Kenardan vurulursa çivi **eğri** girer: 1 puan, seri sıfırlanır.
+/// - Hiç vurulmadan geçen çivi **kaçar**: bir can gider.
 /// Bant yavaş başlar; iyi vuruşlarla hızlanır, can kaybında biraz yavaşlar.
+/// Ayrıca birkaç saniyede bir tempo değişir (sakin / normal / hızlı); geçişler yumuşaktır.
 final class GameScene: SKScene, ObservableObject {
 
     enum LossReason { case bent, escaped }
@@ -36,6 +37,12 @@ final class GameScene: SKScene, ObservableObject {
         static let goodBoost: CGFloat = 1.5
         static let lossSlowdown: CGFloat = 22
 
+        // Tempo dalgaları: bant hızı bu katsayılarla çarpılır, geçişler kademeli
+        static let tempos: [CGFloat] = [0.8, 1.0, 1.0, 1.25]
+        static let tempoDuration: ClosedRange<TimeInterval> = 6...10   // bir tempoda kalma süresi (sn)
+        static let tempoEase: CGFloat = 0.5                            // geçiş yumuşaklığı (büyük = hızlı geçiş)
+        static let tempoAfter = 8                                      // bu kadar çividen sonra başlar
+
         // Vuruş anında çivinin çekiç eksenine uzaklığı (pt)
         static let perfectWindow: CGFloat = 10
         static let goodWindow: CGFloat = 26
@@ -57,7 +64,8 @@ final class GameScene: SKScene, ObservableObject {
 
         // Puan ve para
         static let perfectPoints = 3
-        static let goodPoints = 1
+        static let goodPoints = 2
+        static let weakPoints = 1
         static let hardBonus = 5
         static let streakStep = 5                   // her 5 mükemmel vuruşta çarpan +1
         static let maxMultiplier = 5
@@ -90,6 +98,11 @@ final class GameScene: SKScene, ObservableObject {
     private var striking = false
     private var started = false
     private var beltSpeed: CGFloat = Tuning.startSpeed
+    private var tempo: CGFloat = 1
+    private var tempoTarget: CGFloat = 1
+    private var tempoTimer: TimeInterval = 0
+    /// Bandın gerçek hızı: performansa bağlı hız × tempo dalgası.
+    private var currentSpeed: CGFloat { min(Tuning.maxSpeed * 1.15, beltSpeed * tempo) }
     private var nextSpawnX: CGFloat = 0
     private var spawned = 0
     private var streak = 0
@@ -230,6 +243,9 @@ final class GameScene: SKScene, ObservableObject {
         hasContinued = false
         lastLoss = .bent
         beltSpeed = Tuning.startSpeed
+        tempo = 1
+        tempoTarget = 1
+        tempoTimer = TimeInterval.random(in: Tuning.tempoDuration)
         spawned = 0
         streak = 0
         lastTime = 0
@@ -262,7 +278,8 @@ final class GameScene: SKScene, ObservableObject {
         lastTime = currentTime
         guard running, !isOver else { return }
 
-        track.position.x -= beltSpeed * dt
+        updateTempo(dt)
+        track.position.x -= currentSpeed * dt
         refreshTiles()
         spawnIfNeeded()
         checkEscapes()
@@ -318,9 +335,9 @@ final class GameScene: SKScene, ObservableObject {
 
     private func nextGap() -> CGFloat {
         if spawned > Tuning.pairAfter, Double.random(in: 0..<1) < Tuning.pairChance {
-            return max(60, beltSpeed * Tuning.pairReaction)
+            return max(60, currentSpeed * Tuning.pairReaction)
         }
-        let minGap = max(Tuning.minGap, beltSpeed * Tuning.minReaction)
+        let minGap = max(Tuning.minGap, currentSpeed * Tuning.minReaction)
         return minGap + CGFloat.random(in: Tuning.extraGap)
     }
 
@@ -337,9 +354,11 @@ final class GameScene: SKScene, ObservableObject {
     private func checkEscapes() {
         for nail in nails where !nail.resolved && worldX(nail) < hammerX - Tuning.bendWindow {
             nail.resolved = true
+            // Vurulmuş ama yarım kalmış çivi cezasız geçer; hiç vurulmamış çivi kaçar.
+            guard nail.depth == 0 else { continue }
             popup("KAÇTI!", color: Palette.red, size: 34, at: CGPoint(x: 90, y: 400), shadowColor: Palette.redShadow)
             loseLife(.escaped)
-            if isOver || lives <= 0 { break }
+            if lives <= 0 { break }
         }
         nails.removeAll { nail in
             if worldX(nail) < -60 {
@@ -430,6 +449,7 @@ final class GameScene: SKScene, ObservableObject {
 
         let done = nail.hit(1)
         popup("İYİ", color: Palette.cream, size: 38, at: CGPoint(x: 130, y: 400))
+        popup("+\(Tuning.goodPoints)", color: Palette.green, size: 24, at: CGPoint(x: 130, y: 362), rotation: -0.1, shadowColor: nil)
         sparks(at: CGPoint(x: hammerX, y: surfaceY + (done ? 10 : 36)), count: 5, color: Palette.cream)
         shake(amount: 4)
         Haptics.good()
@@ -456,7 +476,11 @@ final class GameScene: SKScene, ObservableObject {
         }
     }
 
+    /// Kenardan vuruş: çivi eğri girer ve artık vurulamaz. Az puan, can gitmez, seri bozulur.
     private func bend(_ nail: NailNode) {
+        streak = 0
+        multiplier = 1
+        score += Tuning.weakPoints
         nail.resolved = true
         nail.bend()
         nail.run(.sequence([
@@ -464,8 +488,11 @@ final class GameScene: SKScene, ObservableObject {
             .rotate(byAngle: 0.2, duration: 0.07),
             .rotate(byAngle: -0.08, duration: 0.06)
         ]))
-        popup("EĞİLDİ!", color: Palette.red, size: 38, at: CGPoint(x: 130, y: 400), shadowColor: Palette.redShadow)
-        loseLife(.bent)
+        popup("EĞRİ", color: Palette.orange, size: 34, at: CGPoint(x: 130, y: 400))
+        popup("+\(Tuning.weakPoints)", color: Palette.muted, size: 22, at: CGPoint(x: 130, y: 362), rotation: -0.1, shadowColor: nil)
+        shake(amount: 5)
+        Haptics.good()
+        SoundFX.shared.play(.drive)
     }
 
     /// Boşa vuruş: can gitmez ama seri bozulur.
@@ -497,6 +524,27 @@ final class GameScene: SKScene, ObservableObject {
                 .run { [weak self] in self?.isOver = true }
             ]), withKey: "gameOver")
         }
+    }
+
+    // MARK: - Tempo dalgaları
+
+    private func updateTempo(_ dt: CGFloat) {
+        // Hedef tempoya yumuşakça yaklaş (birkaç saniyede)
+        tempo += (tempoTarget - tempo) * min(1, dt * Tuning.tempoEase)
+
+        guard spawned >= Tuning.tempoAfter else { return }
+        tempoTimer -= TimeInterval(dt)
+        guard tempoTimer <= 0 else { return }
+        tempoTimer = TimeInterval.random(in: Tuning.tempoDuration)
+
+        let options = Tuning.tempos.filter { abs($0 - tempoTarget) > 0.01 }
+        guard let next = options.randomElement() else { return }
+        if next > tempoTarget + 0.1 {
+            popup("HIZLANIYOR!", color: Palette.orange, size: 28, at: CGPoint(x: 195, y: 92), rotation: 0, shadowColor: Palette.brownShadow)
+        } else if next < tempoTarget - 0.1 {
+            popup("YAVAŞLIYOR", color: Palette.green, size: 26, at: CGPoint(x: 195, y: 92), rotation: 0, shadowColor: nil)
+        }
+        tempoTarget = next
     }
 
     private func startIdle() {

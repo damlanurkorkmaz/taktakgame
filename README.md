@@ -4,15 +4,15 @@ Tek dokunuşla oynanan bir çivi çakma oyunu. Göstergedeki ibre yeşil bölged
 
 ## Nasıl oynanır
 
-Bant sürekli akar, üstündeki çiviler çekicin altından geçer. Çivi sarı okun üstüne geldiği anda ekrana dokun.
+Bant sürekli akar, üstündeki çiviler çekicin altından geçer. Çivi sarı okun üstüne geldiği anda ekrana dokun. Puan, vuruşun ne kadar tam olduğuna bağlıdır:
 
 - **Mükemmel (tam ortada):** Çivi tek vuruşta gömülür, 3 puan × çarpan. Üst üste her 5 mükemmel vuruşta çarpan artar (en fazla x5).
-- **İyi (biraz kaymış):** Çivi yarıya girer, 1 puan, seri sıfırlanır. İkinci vuruşla tamamlanır.
-- **Eğildi (çok kaymış):** Bir can gider.
-- **Kaçtı:** Çakılmadan (ya da yarım kalarak) geçen çivi bir can götürür.
+- **İyi (biraz kaymış):** Çivi yarıya girer, 2 puan, seri sıfırlanır. İkinci vuruşla tamamlanabilir.
+- **Eğri (kenardan):** Çivi eğri girer, 1 puan, seri sıfırlanır.
+- **Kaçtı:** Hiç vurulmadan geçen çivi bir can götürür. Vurulup yarım kalan çivi cezasız geçer.
 - **Boş vuruş:** Altında çivi yokken vurursan can gitmez ama seri bozulur.
 - 3 can var, bitince oyun biter. Oyun başına bir kez bir can alıp devam edebilirsin.
-- **Hız:** Bant yavaş başlar, iyi vuruşlarla hızlanır, can kaybedince biraz yavaşlar.
+- **Hız:** Bant yavaş başlar, iyi vuruşlarla hızlanır, can kaybedince biraz yavaşlar. Ayrıca birkaç saniyede bir tempo kademeli olarak değişir: sakin, normal ya da hızlı ("HIZLANIYOR!").
 - **Zorlu çivi** (kalın, koyu, turuncu çizgili): iki mükemmel vuruş ister; gömülünce +5 puan bonus.
 - **Altın çivi:** gömülünce +5 para.
 - İlerledikçe birbirine çok yakın gelen çift çiviler de çıkar.
