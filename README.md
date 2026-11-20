@@ -15,7 +15,20 @@ Bant sürekli akar, üstündeki çiviler çekicin altından geçer. Çivi sarı 
 - **Hız:** Bant yavaş başlar, iyi vuruşlarla hızlanır, can kaybedince biraz yavaşlar. Ayrıca birkaç saniyede bir tempo kademeli olarak değişir: sakin, normal ya da hızlı ("HIZLANIYOR!").
 - **Zorlu çivi** (kalın, koyu, turuncu çizgili): iki mükemmel vuruş ister; gömülünce +5 puan bonus.
 - **Altın çivi:** gömülünce +5 para.
+- **Kırmızı çivi:** vurma! Vurursan bir can gider; bırak bant götürsün.
 - İlerledikçe birbirine çok yakın gelen çift çiviler de çıkar.
+
+## Seviyeler
+
+İlk bölüm ("Atölye") 30 seviyedir. Her seviyenin bir hedefi vardır: *25 çivi çak*, *12 mükemmel vuruş*, *4 zorlu çivi göm* gibi.
+
+- **Yıldızlar:** Bitirmek 1 yıldız; %70 isabet 2 yıldız; %90 isabet ya da 10'luk seri 3 yıldız.
+- **Sandık:** Her 15 yıldızda bir sandık açılır (200 para, bazen bir çekiç).
+- **Patron seviyeleri:** Her 5. seviye; daha hızlı bant, karışık çiviler, daha büyük ödül.
+- **Kademeli yenilikler:** 3. seviyede altın çivi, 6'da zorlu çivi, 8'de çift çiviler, 13'te kırmızı çivi (vurma!), 16'da hız dalgaları. Her yenilik ilk çıktığında bir tanıtım kartı gösterilir.
+- **Sonsuz mod:** 10. seviye geçilince açılır; rekor (ve Kristal çekiç) buradan gelir.
+
+Seviyeler `TakTak/Model/Level.swift` içinde kurallarla üretilir (hedef, hız, çivi karışımı). Yıldız eşikleri ve ödüller de aynı dosyada.
 
 ## Özellikler
 

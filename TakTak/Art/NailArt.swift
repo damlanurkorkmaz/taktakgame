@@ -11,6 +11,8 @@ enum NailTint {
     case gold
     /// Zorlu çivi: kalın, koyu, turuncu çizgili; iki tam vuruş ister
     case hard
+    /// Kırmızı çivi: vurulmamalı (kırmızı baş, üstünde beyaz çizgi)
+    case red
 }
 
 /// Çivi çizimi. Tasarımdaki Nail bileşeni (60x100) 100x100'lük kare bir kutunun ortasına çizilir;
@@ -42,14 +44,18 @@ enum NailArt {
 
     /// 100x100 kutuya çizer.
     static func draw(_ ctx: CGContext, _ state: NailState, _ tint: NailTint) {
+        let steel = [UIColor(hex: 0xF7FAFC), UIColor(hex: 0xAEB7C2), UIColor(hex: 0x5E6875)]
         let colors: [UIColor]
         switch tint {
-        case .steel: colors = [UIColor(hex: 0xF7FAFC), UIColor(hex: 0xAEB7C2), UIColor(hex: 0x5E6875)]
+        case .steel: colors = steel
         case .gold: colors = [UIColor(hex: 0xFFF3B8), UIColor(hex: 0xF5B82E), UIColor(hex: 0x9C5F08)]
         case .hard: colors = [UIColor(hex: 0xB8C0CA), UIColor(hex: 0x5B6470), UIColor(hex: 0x262B33)]
+        case .red: colors = [UIColor(hex: 0xFFB3A6), UIColor(hex: 0xE0503F), UIColor(hex: 0x8E2018)]
         }
+        // Kırmızı çivinin yalnızca başı kırmızı, gövdesi çelik.
+        let shaftColors = tint == .red ? steel : colors
         let headG = Art.gradient(colors, [0, 0.5, 1])
-        let shaftG = Art.gradient(colors, [0, 0.45, 1])
+        let shaftG = Art.gradient(shaftColors, [0, 0.45, 1])
 
         // Zorlu çivi daha kalın: gövde 14, baş 54 genişliğinde.
         let hard = tint == .hard
@@ -71,7 +77,7 @@ enum NailArt {
                 p.addLine(to: Art.pt(50, 54))
             }
             Art.stroke(ctx, shaft, Art.outline, shaftW + 4)
-            Art.stroke(ctx, shaft, colors[1], shaftW - 2.5)
+            Art.stroke(ctx, shaft, shaftColors[1], shaftW - 2.5)
             let shine = Art.path { p in
                 p.move(to: Art.pt(28, 98))
                 p.addLine(to: Art.pt(28, 80))
@@ -118,6 +124,10 @@ enum NailArt {
             if hard {
                 // Başın üstünde turuncu halka
                 Art.fill(ctx, Art.rect(headX + headW - 14, headY + 4, 6, headH - 8, r: 2), stripe)
+            }
+            if tint == .red {
+                // "Vurma" işareti: başın ortasında beyaz çizgi
+                Art.fill(ctx, Art.rect(18, headY + (headH - 5) / 2, 24, 5, r: 2.5), .white)
             }
         }
 

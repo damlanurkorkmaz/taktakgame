@@ -94,6 +94,7 @@ struct DisplayTitle: View {
             .shadow(color: shadow, radius: 0, x: 0, y: depth)
             .multilineTextAlignment(.center)
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .displayTrim(size)
     }
 }

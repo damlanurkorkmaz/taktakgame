@@ -1,13 +1,18 @@
 import SwiftUI
 
 struct GameOverView: View {
+    /// nil ise kayıp sebebine göre başlık ("ÇİVİ KAÇTI!" / "KIRMIZI ÇİVİ!")
+    var title: String? = nil
     let score: Int
     let best: Int
+    /// Sonsuz modda rekor kutusu gösterilir
+    var showBest = true
     let newRecord: Bool
     let coinsEarned: Int
     let canContinue: Bool
-    /// true: son can kaçan çiviyle gitti, false: eğilen çiviyle.
-    var escaped = false
+    /// true: son can kaçan çiviyle gitti, false: kırmızı çiviye vurulduğu için.
+    var escaped = true
+    var menuTitle = "Ana menü"
     var onContinue: () -> Void
     var onRetry: () -> Void
     var onMenu: () -> Void
@@ -17,7 +22,7 @@ struct GameOverView: View {
             let small = geo.size.height < 720
             let tall = geo.size.height >= 800
             VStack(spacing: 0) {
-                DisplayTitle(text: escaped ? "ÇİVİ KAÇTI!" : "ÇİVİ EĞİLDİ!", size: small ? 46 : 56, color: .tkRed, shadow: .tkRedShadow, depth: 5)
+                DisplayTitle(text: headline, size: titleSize(small: small), color: .tkRed, shadow: .tkRedShadow, depth: 5)
                     .rotationEffect(.degrees(-3))
                     .padding(.top, small ? 8 : 28)
 
@@ -65,7 +70,7 @@ struct GameOverView: View {
 
                 HStack(spacing: 12) {
                     Button(action: onMenu) {
-                        panelLabel("Ana menü", icon: "house.fill")
+                        panelLabel(menuTitle, icon: menuTitle == "Ana menü" ? "house.fill" : "map.fill")
                     }
                     .buttonStyle(PressableStyle())
 
@@ -82,19 +87,27 @@ struct GameOverView: View {
         .background(Color.tkBg.ignoresSafeArea())
     }
 
+    private var headline: String {
+        title ?? (escaped ? "ÇİVİ KAÇTI!" : "KIRMIZI ÇİVİ!")
+    }
+
+    private func titleSize(small: Bool) -> CGFloat {
+        headline.count > 12 ? (small ? 34 : 40) : (small ? 46 : 56)
+    }
+
     private func bentNail(width: CGFloat) -> some View {
         let img = BeltArt.sceneImage(
             width: min(342, width),
             compact: true,
             nails: [
                 .init(x: 70, state: .driven),
-                .init(x: 195, state: escaped ? .driven : .bent),
+                .init(x: 195, state: escaped ? .driven : .bent, tint: escaped ? .steel : .red),
                 .init(x: escaped ? 305 : 320, state: escaped ? .up : .driven)
             ],
             nailSize: 90
         )
         return Image(uiImage: img)
-            .accessibilityLabel(escaped ? "Kaçan çivi" : "Eğilmiş çivi")
+            .accessibilityLabel(escaped ? "Kaçan çivi" : "Vurulmuş kırmızı çivi")
     }
 
     private var scoreCard: some View {
@@ -119,8 +132,10 @@ struct GameOverView: View {
                 .minimumScaleFactor(0.5)
                 .displayTrim(80)
             HStack(spacing: 12) {
-                statBox(title: "EN İYİ") {
-                    Text("\(best)")
+                if showBest {
+                    statBox(title: "EN İYİ") {
+                        Text("\(best)")
+                    }
                 }
                 statBox(title: "KAZANILAN") {
                     HStack(spacing: 6) {

@@ -3,6 +3,8 @@ import SwiftUI
 struct MenuView: View {
     @EnvironmentObject private var store: GameStore
     var onPlay: () -> Void
+    var onMap: () -> Void
+    var onEndless: () -> Void
     var onShop: () -> Void
     var onDaily: () -> Void
 
@@ -49,21 +51,34 @@ struct MenuView: View {
                     }
                     .padding(.top, 8)
 
-                HStack(spacing: 10) {
-                    Image(systemName: "trophy.fill")
-                        .foregroundStyle(Color.tkYellow)
-                    Text("EN İYİ: \(store.best)")
-                        .font(TKFont.black(18))
-                        .tracking(1)
+                HStack(spacing: 18) {
+                    HStack(spacing: 8) {
+                        StarIcon(filled: true, size: 20)
+                        Text("\(store.totalStars)")
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(store.totalStars) yıldız")
+                    if store.endlessUnlocked {
+                        HStack(spacing: 8) {
+                            Image(systemName: "trophy.fill")
+                                .foregroundStyle(Color.tkYellow)
+                            Text("REKOR: \(store.best)")
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
                 }
+                .font(TKFont.black(18))
+                .tracking(1)
                 .padding(.top, 12)
 
                 Button(action: onPlay) {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 28, weight: .black))
-                        Text("OYNA")
+                        Text(store.allLevelsDone ? "SONSUZ MOD" : "SEVİYE \(store.currentLevel)")
                             .font(TKFont.display(40))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     .frame(height: small ? 66 : 76)
                 }
@@ -73,6 +88,10 @@ struct MenuView: View {
                 Spacer(minLength: 12)
 
                 HStack(spacing: 12) {
+                    navButton("Harita", icon: "map.fill", dot: store.chestReady, action: onMap)
+                    if store.endlessUnlocked && !store.allLevelsDone {
+                        navButton("Sonsuz", icon: "infinity", dot: false, action: onEndless)
+                    }
                     navButton("Mağaza", icon: "bag.fill", dot: false, action: onShop)
                     navButton("Ödül", icon: "gift.fill", dot: store.dailyState.canClaim, action: onDaily)
                 }
@@ -97,6 +116,8 @@ struct MenuView: View {
                     .font(.system(size: 24, weight: .bold))
                 Text(title)
                     .font(TKFont.extraBold(14))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .foregroundStyle(Color.tkCream)
             .frame(maxWidth: .infinity)
