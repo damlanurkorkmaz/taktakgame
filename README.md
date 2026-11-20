@@ -4,11 +4,18 @@ Tek dokunuşla oynanan bir çivi çakma oyunu. Göstergedeki ibre yeşil bölged
 
 ## Nasıl oynanır
 
-- **Yeşil bölge (mükemmel):** Çivi tek vuruşta gömülür. Arka arkaya mükemmel vuruşlar seriyi ve puan çarpanını artırır (x2, x3 … x5).
-- **Kahverengi bölge (iyi):** Çivi yarıya kadar girer, ikinci bir vuruş gerekir. Seri sıfırlanır.
-- **Dışarısı:** Çivi eğilir ve oyun biter.
-- **Altın çivi:** Arada çıkar, çakınca bonus para verir.
-- Her çividen sonra bant kayar, ibre hızlanır ve bölgeler daralır.
+Bant sürekli akar, üstündeki çiviler çekicin altından geçer. Çivi sarı okun üstüne geldiği anda ekrana dokun.
+
+- **Mükemmel (tam ortada):** Çivi tek vuruşta gömülür, 3 puan × çarpan. Üst üste her 5 mükemmel vuruşta çarpan artar (en fazla x5).
+- **İyi (biraz kaymış):** Çivi yarıya girer, 1 puan, seri sıfırlanır. İkinci vuruşla tamamlanır.
+- **Eğildi (çok kaymış):** Bir can gider.
+- **Kaçtı:** Çakılmadan (ya da yarım kalarak) geçen çivi bir can götürür.
+- **Boş vuruş:** Altında çivi yokken vurursan can gitmez ama seri bozulur.
+- 3 can var, bitince oyun biter. Oyun başına bir kez bir can alıp devam edebilirsin.
+- **Hız:** Bant yavaş başlar, iyi vuruşlarla hızlanır, can kaybedince biraz yavaşlar.
+- **Zorlu çivi** (kalın, koyu, turuncu çizgili): iki mükemmel vuruş ister; gömülünce +5 puan bonus.
+- **Altın çivi:** gömülünce +5 para.
+- İlerledikçe birbirine çok yakın gelen çift çiviler de çıkar.
 
 ## Özellikler
 
@@ -40,7 +47,7 @@ TakTak/
 
 ## Oyun dengesi
 
-Zorluk ayarları `TakTak/Game/GameScene.swift` içindeki `Tuning` bölümündedir: ibre hızı, bölge genişlikleri, altın çivi olasılığı. Günlük ödül miktarları `GameStore.dailyRewards`, çekiç fiyatları ise `HammerVariant.price` içindedir.
+Zorluk ayarları `TakTak/Game/GameScene.swift` içindeki `Tuning` bölümündedir: bant hızı ve hızlanma, vuruş pencereleri, çivi aralıkları, zorlu/altın/çift çivi olasılıkları, puanlar. Günlük ödül miktarları `GameStore.dailyRewards`, çekiç fiyatları ise `HammerVariant.price` içindedir.
 
 ## Codemagic ile App Store'a gönderme
 

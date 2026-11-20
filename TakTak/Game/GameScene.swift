@@ -3,47 +3,75 @@ import UIKit
 
 /// Oyunun kalbi.
 ///
-/// Döngü: Göstergedeki ibre sağa sola gider. Oyuncu ekrana dokunur, çekiç iner.
-/// - İbre yeşil (mükemmel) bölgedeyse çivi tek vuruşta gömülür; seri ve çarpan artar.
-/// - Kahverengi (iyi) bölgedeyse çivi yarıya girer; ikinci bir vuruş gerekir, seri sıfırlanır.
-/// - Dışındaysa çivi eğilir ve oyun biter.
-/// Her çividen sonra bant bir adım sola kayar; ibre hızlanır, bölgeler daralır.
+/// Bant sürekli sola akar, üstündeki çiviler çekicin altından geçer.
+/// Oyuncu, çivi sarı okun üstüne geldiği anda dokunur:
+/// - Tam ortadaysa **mükemmel**: çivi derin girer, seri ve çarpan artar.
+/// - Biraz kaymışsa **iyi**: çivi yarıya girer, seri sıfırlanır.
+/// - Çok kaymışsa çivi **eğilir**: bir can gider.
+/// - Hiç vurulmadan geçen ya da yarım kalan çivi **kaçar**: bir can gider.
+/// Bant yavaş başlar; iyi vuruşlarla hızlanır, can kaybında biraz yavaşlar.
 final class GameScene: SKScene, ObservableObject {
+
+    enum LossReason { case bent, escaped }
+
+    static let maxLives = 3
 
     // MARK: - SwiftUI'ye yayınlanan durum
 
     @Published private(set) var score = 0
     @Published private(set) var multiplier = 1
     @Published private(set) var runCoins = 0
+    @Published private(set) var lives = GameScene.maxLives
     @Published private(set) var isOver = false
     @Published private(set) var hasContinued = false
+    @Published private(set) var lastLoss: LossReason = .bent
 
-    // MARK: - Ayarlanabilir oyun dengesi
+    // MARK: - Oyun dengesi
 
     private enum Tuning {
-        static let baseSpeed: CGFloat = 0.85        // ibre hızı (gösterge genişliği / saniye)
-        static let speedPerPoint: CGFloat = 0.035
-        static let maxSpeed: CGFloat = 2.4
-        static let basePerfect: CGFloat = 0.13      // mükemmel bölge genişliği (oran)
-        static let minPerfect: CGFloat = 0.06
-        static let perfectShrink: CGFloat = 0.0015
-        static let baseGoodHalf: CGFloat = 0.20     // iyi bölgenin yarı genişliği
-        static let minGoodHalf: CGFloat = 0.12
-        static let goodShrink: CGFloat = 0.002
-        static let goldChance: Double = 0.12
-        static let goldBonus = 5
+        // Bant hızı (pt/sn)
+        static let startSpeed: CGFloat = 70
+        static let maxSpeed: CGFloat = 300
+        static let perfectBoost: CGFloat = 3.5
+        static let goodBoost: CGFloat = 1.5
+        static let lossSlowdown: CGFloat = 22
+
+        // Vuruş anında çivinin çekiç eksenine uzaklığı (pt)
+        static let perfectWindow: CGFloat = 10
+        static let goodWindow: CGFloat = 26
+        static let bendWindow: CGFloat = 40
+
+        // Çivi aralığı
+        static let minReaction: CGFloat = 0.55      // iki çivi arası en az süre (sn)
+        static let minGap: CGFloat = 70
+        static let extraGap: ClosedRange<CGFloat> = 0...130
+        static let pairAfter = 25                   // bu kadar çividen sonra çift çiviler gelebilir
+        static let pairChance = 0.12
+        static let pairReaction: CGFloat = 0.35
+
+        // Çivi türleri
+        static let goldChance = 0.08
+        static let hardAfter = 12
+        static let hardChanceBase = 0.15
+        static let hardChanceMax = 0.28
+
+        // Puan ve para
+        static let perfectPoints = 3
+        static let goodPoints = 1
+        static let hardBonus = 5
+        static let streakStep = 5                   // her 5 mükemmel vuruşta çarpan +1
+        static let maxMultiplier = 5
+        static let goldCoins = 5
+        static let hardCoins = 2
     }
 
-    // MARK: - Yerleşim (390x844 tasarım ölçüsü, SpriteKit'te y yukarı)
+    // MARK: - Yerleşim (genişlik 390, SpriteKit'te y yukarı)
 
-    private let surfaceY: CGFloat = 240           // tahtanın üst yüzeyi
-    private let hammerX: CGFloat = 195            // vuruş noktası
-    private let spacing: CGFloat = 110            // çiviler arası mesafe
+    private let surfaceY: CGFloat = 240
+    private let hammerX: CGFloat = 195
     private let nailSize: CGFloat = 80
     private let hammerSize: CGFloat = 260
-    private let restAngle: CGFloat = 0.47         // bekleme açısı (radyan)
-    private let meterWidth: CGFloat = 326
-    private let meterY: CGFloat = 101
+    private let restAngle: CGFloat = 0.47
 
     // MARK: - Düğümler
 
@@ -51,31 +79,21 @@ final class GameScene: SKScene, ObservableObject {
     private let track = SKNode()
     private var hammer: SKSpriteNode?
     private var tiles: [Int: SKSpriteNode] = [:]
-    private var nails: [Int: NailNode] = [:]
-    private var current = 0
-
-    private let meter = SKNode()
-    private var goodZone: SKSpriteNode?
-    private var perfectZone: SKSpriteNode?
-    private var indicator: SKShapeNode?
+    private var nails: [NailNode] = []
     private var hintLabel: SKLabelNode?
 
     // MARK: - Durum
 
-    private enum Phase { case ready, swinging, advancing, dead }
-    private enum HitResult { case perfect, good, miss }
-
-    private var phase: Phase = .ready
     private var hammerVariant: HammerVariant = .klasik
     private var built = false
-    private var needle: CGFloat = 0          // ibre konumu 0...1
-    private var direction: CGFloat = 1
-    private var zoneCenter: CGFloat = 0.5
-    private var perfectWidth: CGFloat = Tuning.basePerfect
-    private var goodHalf: CGFloat = Tuning.baseGoodHalf
-    private var lastTime: TimeInterval = 0
-    private var streak = 0
+    private var running = false
+    private var striking = false
     private var started = false
+    private var beltSpeed: CGFloat = Tuning.startSpeed
+    private var nextSpawnX: CGFloat = 0
+    private var spawned = 0
+    private var streak = 0
+    private var lastTime: TimeInterval = 0
 
     convenience init(hammer: HammerVariant) {
         self.init(size: CGSize(width: 390, height: 844))
@@ -114,6 +132,20 @@ final class GameScene: SKScene, ObservableObject {
         track.zPosition = 2
         world.addChild(track)
 
+        // Vuruş bölgesini gösteren hafif ışık: dış kısım "iyi", orta kısım "mükemmel".
+        let good = SKSpriteNode(color: Palette.yellow.withAlphaComponent(0.07),
+                                size: CGSize(width: Tuning.goodWindow * 2, height: 120))
+        good.anchorPoint = CGPoint(x: 0.5, y: 0)
+        good.position = CGPoint(x: hammerX, y: surfaceY)
+        good.zPosition = 2.5
+        world.addChild(good)
+        let perfect = SKSpriteNode(color: Palette.green.withAlphaComponent(0.12),
+                                   size: CGSize(width: Tuning.perfectWindow * 2, height: 120))
+        perfect.anchorPoint = CGPoint(x: 0.5, y: 0)
+        perfect.position = CGPoint(x: hammerX, y: surfaceY)
+        perfect.zPosition = 2.6
+        world.addChild(perfect)
+
         // Çekiç: dik çizilir, sapın ucundan döner. 90° döndüğünde başı çivinin üstüne iner.
         let h = SKSpriteNode(texture: hammerTexture())
         h.size = CGSize(width: hammerSize, height: hammerSize)
@@ -127,49 +159,19 @@ final class GameScene: SKScene, ObservableObject {
         world.addChild(h)
         hammer = h
 
-        buildMeter()
+        let hint = SKLabelNode(fontNamed: TKFont.extraBoldName)
+        hint.text = "Çivi sarı okun üstüne gelince dokun"
+        hint.fontSize = 15
+        hint.fontColor = Palette.muted
+        hint.verticalAlignmentMode = .center
+        hint.position = CGPoint(x: 195, y: 92)
+        hint.zPosition = 30
+        addChild(hint)
+        hintLabel = hint
     }
 
     private func hammerTexture() -> SKTexture {
         SKTexture(image: HammerArt.image(hammerVariant, size: hammerSize, angle: 0, shadow: false))
-    }
-
-    private func buildMeter() {
-        meter.position = CGPoint(x: 195, y: meterY)
-        meter.zPosition = 30
-        addChild(meter)
-
-        let bar = SKShapeNode(rectOf: CGSize(width: meterWidth, height: 22), cornerRadius: 11)
-        bar.fillColor = Palette.panel
-        bar.strokeColor = .clear
-        meter.addChild(bar)
-
-        let good = SKSpriteNode(color: Palette.meterGood, size: CGSize(width: 10, height: 22))
-        good.zPosition = 1
-        meter.addChild(good)
-        goodZone = good
-
-        let perfect = SKSpriteNode(color: Palette.green, size: CGSize(width: 10, height: 22))
-        perfect.zPosition = 2
-        meter.addChild(perfect)
-        perfectZone = perfect
-
-        let ind = SKShapeNode(rectOf: CGSize(width: 8, height: 38), cornerRadius: 4)
-        ind.fillColor = Palette.cream
-        ind.strokeColor = Palette.bg
-        ind.lineWidth = 3
-        ind.zPosition = 3
-        meter.addChild(ind)
-        indicator = ind
-
-        let hint = SKLabelNode(fontNamed: TKFont.extraBoldName)
-        hint.text = "Ekranın herhangi bir yerine dokun"
-        hint.fontSize = 15
-        hint.fontColor = Palette.muted
-        hint.verticalAlignmentMode = .center
-        hint.position = CGPoint(x: 0, y: -42)
-        meter.addChild(hint)
-        hintLabel = hint
     }
 
     // MARK: - Dışarıdan çağrılanlar
@@ -178,24 +180,23 @@ final class GameScene: SKScene, ObservableObject {
         resetRun()
     }
 
-    /// "Devam et": eğilen çiviyi yenisiyle değiştirir. Oyun başına bir kez.
+    /// "Devam et": bir can verir, çekicin önündeki çivileri temizler. Oyun başına bir kez.
     func revive() {
         guard isOver, !hasContinued else { return }
         hasContinued = true
-        if let old = nails[current] {
-            old.removeAllActions()
-            old.removeFromParent()
+        for nail in nails where !nail.resolved && worldX(nail) < hammerX + 220 {
+            nail.resolved = true
+            nail.run(.sequence([.fadeOut(withDuration: 0.2), .removeFromParent()]))
         }
-        let fresh = makeNail(index: current, state: .up, tint: .steel)
-        nails[current] = fresh
+        lives = 1
         streak = 0
         multiplier = 1
-        newZone()
+        striking = false
         hammer?.removeAllActions()
         hammer?.zRotation = restAngle
         startIdle()
         isOver = false
-        phase = .ready
+        running = true
     }
 
     /// Oyun sonu ekranı paraları kaydettikten sonra çağırır (devam edilirse iki kez sayılmasın).
@@ -212,7 +213,7 @@ final class GameScene: SKScene, ObservableObject {
 
     private func resetRun() {
         removeAction(forKey: "gameOver")
-        nails.values.forEach { $0.removeFromParent() }
+        nails.forEach { $0.removeFromParent() }
         nails.removeAll()
         tiles.values.forEach { $0.removeFromParent() }
         tiles.removeAll()
@@ -221,36 +222,66 @@ final class GameScene: SKScene, ObservableObject {
         world.removeAllActions()
         world.position = .zero
 
-        current = 0
         score = 0
         multiplier = 1
         runCoins = 0
-        streak = 0
+        lives = GameScene.maxLives
         isOver = false
         hasContinued = false
-        phase = .ready
-        needle = 0
-        direction = 1
+        lastLoss = .bent
+        beltSpeed = Tuning.startSpeed
+        spawned = 0
+        streak = 0
         lastTime = 0
         started = false
+        striking = false
+        running = true
 
+        hintLabel?.removeAllActions()
         hintLabel?.alpha = 1
         hammer?.removeAllActions()
         hammer?.texture = hammerTexture()
         hammer?.zRotation = restAngle
         startIdle()
 
-        refreshTrack()
-        newZone()
+        // Geride, daha önce çakılmış gibi duran süs çivileri
+        for offset in [CGFloat(-110), -220] {
+            let n = makeNail(kind: .normal, at: hammerX + offset)
+            n.setDriven()
+            n.resolved = true
+        }
+        nextSpawnX = hammerX + 230
+        refreshTiles()
+        spawnIfNeeded()
+    }
+
+    // MARK: - Döngü
+
+    override func update(_ currentTime: TimeInterval) {
+        let dt = lastTime == 0 ? 0 : CGFloat(min(currentTime - lastTime, 1.0 / 30.0))
+        lastTime = currentTime
+        guard running, !isOver else { return }
+
+        track.position.x -= beltSpeed * dt
+        refreshTiles()
+        spawnIfNeeded()
+        checkEscapes()
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        tap()
     }
 
     // MARK: - Bant ve çiviler
 
-    private func refreshTrack() {
-        // Kalaslar: görünen aralığı kapsayan karoları oluştur, dışarıda kalanları sil.
+    private func worldX(_ nail: NailNode) -> CGFloat {
+        nail.position.x + track.position.x
+    }
+
+    private func refreshTiles() {
         let tx = track.position.x
         let first = Int(floor((-80 - tx) / BeltArt.unitWidth))
-        let last = Int(floor((470 - tx) / BeltArt.unitWidth))
+        let last = Int(floor((size.width + 80 - tx) / BeltArt.unitWidth))
         for i in first...last where tiles[i] == nil {
             let tile = SKSpriteNode(texture: SKTexture(image: BeltArt.trackImage()))
             tile.size = CGSize(width: BeltArt.unitWidth + 0.5, height: BeltArt.fullHeight)
@@ -263,192 +294,209 @@ final class GameScene: SKScene, ObservableObject {
             tile.removeFromParent()
             tiles[i] = nil
         }
+    }
 
-        // Çiviler: geride çakılmış olanlar, önde bekleyenler.
-        for i in (current - 3)...(current + 3) where nails[i] == nil {
-            let state: NailState = i < 0 ? .driven : .up
-            let gold = i >= 3 && Double.random(in: 0..<1) < Tuning.goldChance
-            nails[i] = makeNail(index: i, state: state, tint: gold ? .gold : .steel)
-        }
-        for (i, nail) in nails where i < current - 4 {
-            nail.removeFromParent()
-            nails[i] = nil
+    private func spawnIfNeeded() {
+        while nextSpawnX + track.position.x < size.width + 60 {
+            makeNail(kind: nextKind(), at: nextSpawnX)
+            spawned += 1
+            nextSpawnX += nextGap()
         }
     }
 
-    private func makeNail(index: Int, state: NailState, tint: NailTint) -> NailNode {
-        let n = NailNode(state: state, tint: tint, size: nailSize)
-        n.position = CGPoint(x: hammerX + CGFloat(index) * spacing, y: surfaceY)
+    private func nextKind() -> NailKind {
+        let r = Double.random(in: 0..<1)
+        if spawned >= Tuning.hardAfter {
+            let hardChance = min(Tuning.hardChanceMax, Tuning.hardChanceBase + Double(spawned) * 0.002)
+            if r < hardChance { return .hard }
+            if r < hardChance + Tuning.goldChance { return .gold }
+        } else if spawned >= 3, r < Tuning.goldChance {
+            return .gold
+        }
+        return .normal
+    }
+
+    private func nextGap() -> CGFloat {
+        if spawned > Tuning.pairAfter, Double.random(in: 0..<1) < Tuning.pairChance {
+            return max(60, beltSpeed * Tuning.pairReaction)
+        }
+        let minGap = max(Tuning.minGap, beltSpeed * Tuning.minReaction)
+        return minGap + CGFloat.random(in: Tuning.extraGap)
+    }
+
+    @discardableResult
+    private func makeNail(kind: NailKind, at x: CGFloat) -> NailNode {
+        let n = NailNode(kind: kind, size: nailSize)
+        n.position = CGPoint(x: x, y: surfaceY)
         n.zPosition = 3
         track.addChild(n)
+        nails.append(n)
         return n
     }
 
-    private func newZone() {
-        let s = CGFloat(score)
-        perfectWidth = max(Tuning.minPerfect, Tuning.basePerfect - Tuning.perfectShrink * s)
-        goodHalf = max(Tuning.minGoodHalf, Tuning.baseGoodHalf - Tuning.goodShrink * s)
-        let margin = goodHalf + 0.05
-        zoneCenter = CGFloat.random(in: margin...(1 - margin))
-
-        let x = (zoneCenter - 0.5) * meterWidth
-        goodZone?.size.width = goodHalf * 2 * meterWidth
-        goodZone?.position.x = x
-        perfectZone?.size.width = perfectWidth * meterWidth
-        perfectZone?.position.x = x
-
-        perfectZone?.removeAllActions()
-        perfectZone?.setScale(1)
-        perfectZone?.run(.sequence([.scaleY(to: 1.35, duration: 0.06), .scaleY(to: 1, duration: 0.1)]))
+    private func checkEscapes() {
+        for nail in nails where !nail.resolved && worldX(nail) < hammerX - Tuning.bendWindow {
+            nail.resolved = true
+            popup("KAÇTI!", color: Palette.red, size: 34, at: CGPoint(x: 90, y: 400), shadowColor: Palette.redShadow)
+            loseLife(.escaped)
+            if isOver || lives <= 0 { break }
+        }
+        nails.removeAll { nail in
+            if worldX(nail) < -60 {
+                nail.removeFromParent()
+                return true
+            }
+            return false
+        }
     }
 
-    // MARK: - Döngü
-
-    override func update(_ currentTime: TimeInterval) {
-        let dt = lastTime == 0 ? 0 : min(currentTime - lastTime, 1.0 / 30.0)
-        lastTime = currentTime
-        guard !isOver, phase != .dead else { return }
-
-        let speed = min(Tuning.maxSpeed, Tuning.baseSpeed + Tuning.speedPerPoint * CGFloat(score))
-        needle += direction * speed * CGFloat(dt)
-        if needle > 1 { needle = 2 - needle; direction = -1 }
-        if needle < 0 { needle = -needle; direction = 1 }
-        indicator?.position.x = (needle - 0.5) * meterWidth
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        tap()
+    /// Çekicin altına en yakın, henüz sonuçlanmamış çivi.
+    private func target(within maxDistance: CGFloat) -> NailNode? {
+        nails
+            .filter { !$0.resolved && abs(worldX($0) - hammerX) <= maxDistance }
+            .min { abs(worldX($0) - hammerX) < abs(worldX($1) - hammerX) }
     }
 
     // MARK: - Vuruş
 
     private func tap() {
-        guard phase == .ready, !isOver, let hammer, let nail = nails[current] else { return }
+        guard running, !isOver, !striking, let hammer else { return }
 
         if !started {
             started = true
-            hintLabel?.run(.fadeOut(withDuration: 0.3))
+            hintLabel?.run(.sequence([.wait(forDuration: 1.5), .fadeOut(withDuration: 0.4)]))
         }
 
-        phase = .swinging
-        let result = evaluate()
-        let strike: CGFloat = nail.state == .half ? 103 * .pi / 180 : .pi / 2
+        striking = true
+        let aim = target(within: Tuning.bendWindow + 30)
+        let angle: CGFloat = aim?.state == .half ? 103 * .pi / 180 : .pi / 2
 
-        hammer.removeAction(forKey: "idle")
-        let down = SKAction.rotate(toAngle: strike, duration: 0.06, shortestUnitArc: false)
+        hammer.removeAllActions()
+        let down = SKAction.rotate(toAngle: angle, duration: 0.05, shortestUnitArc: false)
         down.timingMode = .easeIn
-        let up = SKAction.rotate(toAngle: restAngle, duration: 0.18, shortestUnitArc: false)
+        let up = SKAction.rotate(toAngle: restAngle, duration: 0.12, shortestUnitArc: false)
         up.timingMode = .easeOut
 
         hammer.run(.sequence([
             down,
-            .run { [weak self] in self?.impact(result) },
-            .wait(forDuration: 0.05),
-            up,
             .run { [weak self] in
-                guard let self else { return }
-                if self.phase == .swinging { self.phase = .ready }
-                self.startIdle()
-            }
+                self?.impact()
+                self?.striking = false
+            },
+            .wait(forDuration: 0.03),
+            up,
+            .run { [weak self] in self?.startIdle() }
         ]))
     }
 
-    private func evaluate() -> HitResult {
-        let d = abs(needle - zoneCenter)
-        if d <= perfectWidth / 2 + 0.008 { return .perfect }
-        if d <= goodHalf { return .good }
-        return .miss
+    private func impact() {
+        guard running else { return }
+        guard let nail = target(within: Tuning.bendWindow) else {
+            hitWood()
+            return
+        }
+        let dx = abs(worldX(nail) - hammerX)
+        if dx <= Tuning.perfectWindow {
+            perfectHit(nail)
+        } else if dx <= Tuning.goodWindow {
+            goodHit(nail)
+        } else {
+            bend(nail)
+        }
     }
 
-    private func impact(_ result: HitResult) {
-        guard let nail = nails[current] else { return }
-        let headPoint = CGPoint(x: hammerX, y: surfaceY + 10)
+    private func perfectHit(_ nail: NailNode) {
+        streak += 1
+        multiplier = min(Tuning.maxMultiplier, 1 + streak / Tuning.streakStep)
+        let points = Tuning.perfectPoints * multiplier
+        score += points
+        beltSpeed = min(Tuning.maxSpeed, beltSpeed + Tuning.perfectBoost)
 
-        switch result {
-        case .perfect:
-            streak += 1
-            multiplier = min(5, 1 + streak / 3)
-            let gained = multiplier
-            score += gained
-            nail.set(.driven)
-            payCoins(for: nail)
-            popup("MÜKEMMEL!", color: Palette.yellow, size: 46, at: CGPoint(x: 140, y: 410))
-            popup("+\(gained)", color: Palette.green, size: 26, at: CGPoint(x: 140, y: 366), rotation: -0.1, shadow: false)
-            sparks(at: headPoint, count: 12, color: Palette.yellow)
-            shake(amount: 9)
-            Haptics.perfect()
-            SoundFX.shared.play(.perfect)
-            advance()
+        let done = nail.hit(2)
+        popup("MÜKEMMEL!", color: Palette.yellow, size: 46, at: CGPoint(x: 140, y: 410))
+        popup("+\(points)", color: Palette.green, size: 26, at: CGPoint(x: 140, y: 366), rotation: -0.1, shadowColor: nil)
+        sparks(at: CGPoint(x: hammerX, y: surfaceY + (done ? 10 : 36)), count: 12, color: Palette.yellow)
+        shake(amount: 8)
+        Haptics.perfect()
+        SoundFX.shared.play(.perfect)
+        if done { finish(nail) }
+    }
 
-        case .good:
-            streak = 0
-            multiplier = 1
-            if nail.state == .up {
-                nail.set(.half)
-                popup("İYİ", color: Palette.cream, size: 38, at: CGPoint(x: 130, y: 400))
-                sparks(at: CGPoint(x: hammerX, y: surfaceY + 36), count: 5, color: Palette.cream)
-                shake(amount: 4)
-                Haptics.good()
-                SoundFX.shared.play(.good)
-                newZone()
-            } else {
-                nail.set(.driven)
-                score += 1
-                payCoins(for: nail)
-                popup("+1", color: Palette.green, size: 26, at: CGPoint(x: 130, y: 380), shadow: false)
-                sparks(at: headPoint, count: 6, color: Palette.cream)
-                shake(amount: 5)
-                Haptics.good()
-                SoundFX.shared.play(.drive)
-                advance()
-            }
+    private func goodHit(_ nail: NailNode) {
+        streak = 0
+        multiplier = 1
+        score += Tuning.goodPoints
+        beltSpeed = min(Tuning.maxSpeed, beltSpeed + Tuning.goodBoost)
 
-        case .miss:
-            streak = 0
-            multiplier = 1
-            phase = .dead
-            nail.set(.bent)
-            nail.run(.sequence([
-                .rotate(byAngle: -0.12, duration: 0.05),
-                .rotate(byAngle: 0.2, duration: 0.07),
-                .rotate(byAngle: -0.08, duration: 0.06)
-            ]))
-            flash(Palette.red)
-            shake(amount: 12)
-            Haptics.miss()
-            SoundFX.shared.play(.miss)
+        let done = nail.hit(1)
+        popup("İYİ", color: Palette.cream, size: 38, at: CGPoint(x: 130, y: 400))
+        sparks(at: CGPoint(x: hammerX, y: surfaceY + (done ? 10 : 36)), count: 5, color: Palette.cream)
+        shake(amount: 4)
+        Haptics.good()
+        SoundFX.shared.play(done ? .drive : .good)
+        if done { finish(nail) }
+    }
+
+    /// Çivi tamamen gömüldü: para ve zorlu çivi bonusu.
+    private func finish(_ nail: NailNode) {
+        nail.resolved = true
+        switch nail.kind {
+        case .normal:
+            runCoins += 1
+        case .gold:
+            runCoins += 1 + Tuning.goldCoins
+            popup("+\(Tuning.goldCoins + 1) PARA", color: Palette.yellow, size: 22,
+                  at: CGPoint(x: 270, y: 420), rotation: 0.08, shadowColor: nil)
+            SoundFX.shared.play(.coin)
+        case .hard:
+            runCoins += 1 + Tuning.hardCoins
+            score += Tuning.hardBonus
+            popup("ZORLU +\(Tuning.hardBonus)", color: Palette.orange, size: 26,
+                  at: CGPoint(x: 270, y: 420), rotation: 0.08, shadowColor: nil)
+        }
+    }
+
+    private func bend(_ nail: NailNode) {
+        nail.resolved = true
+        nail.bend()
+        nail.run(.sequence([
+            .rotate(byAngle: -0.12, duration: 0.05),
+            .rotate(byAngle: 0.2, duration: 0.07),
+            .rotate(byAngle: -0.08, duration: 0.06)
+        ]))
+        popup("EĞİLDİ!", color: Palette.red, size: 38, at: CGPoint(x: 130, y: 400), shadowColor: Palette.redShadow)
+        loseLife(.bent)
+    }
+
+    /// Boşa vuruş: can gitmez ama seri bozulur.
+    private func hitWood() {
+        streak = 0
+        multiplier = 1
+        popup("BOŞ", color: Palette.muted, size: 26, at: CGPoint(x: 130, y: 390), shadowColor: nil)
+        shake(amount: 3)
+        Haptics.tap()
+        SoundFX.shared.play(.good)
+    }
+
+    private func loseLife(_ reason: LossReason) {
+        guard lives > 0 else { return }
+        lives -= 1
+        lastLoss = reason
+        streak = 0
+        multiplier = 1
+        beltSpeed = max(Tuning.startSpeed, beltSpeed - Tuning.lossSlowdown)
+        flash(Palette.red)
+        shake(amount: 11)
+        Haptics.miss()
+        SoundFX.shared.play(.miss)
+
+        if lives <= 0 {
+            running = false
             run(.sequence([
-                .wait(forDuration: 0.75),
+                .wait(forDuration: 0.8),
                 .run { [weak self] in self?.isOver = true }
             ]), withKey: "gameOver")
         }
-    }
-
-    private func payCoins(for nail: NailNode) {
-        if nail.tint == .gold {
-            runCoins += 1 + Tuning.goldBonus
-            popup("+\(Tuning.goldBonus + 1) PARA", color: Palette.yellow, size: 22, at: CGPoint(x: 270, y: 420), rotation: 0.08, shadow: false)
-            SoundFX.shared.play(.coin)
-        } else {
-            runCoins += 1
-        }
-    }
-
-    private func advance() {
-        phase = .advancing
-        let move = SKAction.moveBy(x: -spacing, y: 0, duration: 0.2)
-        move.timingMode = .easeInEaseOut
-        track.run(.sequence([
-            .wait(forDuration: 0.1),
-            move,
-            .run { [weak self] in
-                guard let self else { return }
-                self.current += 1
-                self.refreshTrack()
-                self.newZone()
-                if self.phase == .advancing { self.phase = .ready }
-            }
-        ]))
     }
 
     private func startIdle() {
@@ -464,17 +512,17 @@ final class GameScene: SKScene, ObservableObject {
     // MARK: - Efektler
 
     private func popup(_ text: String, color: UIColor, size: CGFloat, at pos: CGPoint,
-                       rotation: CGFloat = -0.14, shadow: Bool = true) {
+                       rotation: CGFloat = -0.14, shadowColor: UIColor? = Palette.brownShadow) {
         let node = SKNode()
         node.position = pos
         node.zRotation = rotation
         node.zPosition = 50
 
-        if shadow {
+        if let shadowColor {
             let back = SKLabelNode(fontNamed: TKFont.displayName)
             back.text = text
             back.fontSize = size
-            back.fontColor = Palette.brownShadow
+            back.fontColor = shadowColor
             back.verticalAlignmentMode = .center
             back.position = CGPoint(x: 0, y: -4)
             node.addChild(back)
@@ -491,7 +539,7 @@ final class GameScene: SKScene, ObservableObject {
         node.run(.sequence([
             .scale(to: 1.15, duration: 0.08),
             .scale(to: 1.0, duration: 0.06),
-            .wait(forDuration: 0.35),
+            .wait(forDuration: 0.3),
             .group([.fadeOut(withDuration: 0.25), .moveBy(x: 0, y: 30, duration: 0.25)]),
             .removeFromParent()
         ]))
@@ -540,18 +588,39 @@ final class GameScene: SKScene, ObservableObject {
     }
 }
 
+// MARK: - Çivi türleri
+
+enum NailKind {
+    case normal, gold, hard
+
+    var tint: NailTint {
+        switch self {
+        case .normal: return .steel
+        case .gold: return .gold
+        case .hard: return .hard
+        }
+    }
+
+    /// Tam gömülmek için gereken derinlik. Mükemmel vuruş 2, iyi vuruş 1 birim.
+    var depthNeeded: Int {
+        self == .hard ? 4 : 2
+    }
+}
+
 // MARK: - Çivi düğümü
 
 final class NailNode: SKSpriteNode {
-    private(set) var state: NailState
-    let tint: NailTint
+    let kind: NailKind
+    private(set) var state: NailState = .up
+    private(set) var depth = 0
+    /// Çakıldı, eğildi ya da kaçtı: artık vurulamaz.
+    var resolved = false
     private let side: CGFloat
 
-    init(state: NailState, tint: NailTint, size: CGFloat) {
-        self.state = state
-        self.tint = tint
+    init(kind: NailKind, size: CGFloat) {
+        self.kind = kind
         self.side = size
-        let tex = SKTexture(image: NailArt.image(state, tint, size: size))
+        let tex = SKTexture(image: NailArt.image(.up, kind.tint, size: size))
         super.init(texture: tex, color: .clear, size: CGSize(width: size, height: size))
         anchorPoint = CGPoint(x: 0.5, y: 0)
     }
@@ -560,8 +629,33 @@ final class NailNode: SKSpriteNode {
         fatalError("init(coder:) kullanılmıyor")
     }
 
-    func set(_ newState: NailState) {
+    /// Çiviyi `amount` birim çakar. Tamamen gömüldüyse true döner.
+    func hit(_ amount: Int) -> Bool {
+        depth = min(kind.depthNeeded, depth + amount)
+        let ratio = CGFloat(depth) / CGFloat(kind.depthNeeded)
+        if ratio >= 1 {
+            set(.driven)
+            return true
+        }
+        if ratio >= 0.5 {
+            set(.half)
+        }
+        // Zorlu çivide ilk "iyi" vuruş çiviyi biraz oturtur: küçük bir sarsıntı yeter.
+        run(.sequence([.moveBy(x: 0, y: -2, duration: 0.03), .moveBy(x: 0, y: 2, duration: 0.05)]))
+        return false
+    }
+
+    func setDriven() {
+        depth = kind.depthNeeded
+        set(.driven)
+    }
+
+    func bend() {
+        set(.bent)
+    }
+
+    private func set(_ newState: NailState) {
         state = newState
-        texture = SKTexture(image: NailArt.image(newState, tint, size: side))
+        texture = SKTexture(image: NailArt.image(newState, kind.tint, size: side))
     }
 }

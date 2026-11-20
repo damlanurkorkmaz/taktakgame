@@ -39,6 +39,7 @@ struct GameView: View {
                     newRecord: r.newRecord,
                     coinsEarned: r.coins,
                     canContinue: !scene.hasContinued,
+                    escaped: scene.lastLoss == .escaped,
                     onContinue: {
                         // Şimdilik her oyunda bir kez ücretsiz devam hakkı.
                         // İleride ödüllü reklam eklenirse (ör. AdMob RewardedAd), reklam izlenince
@@ -82,6 +83,21 @@ struct GameView: View {
                 .buttonStyle(PressableStyle())
                 .accessibilityLabel("Duraklat")
                 .disabled(result != nil)
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    ForEach(0..<GameScene.maxLives, id: \.self) { i in
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(i < scene.lives ? Color.tkRed : Color.tkPanel)
+                            .scaleEffect(i < scene.lives ? 1 : 0.85)
+                    }
+                }
+                .animation(.spring(duration: 0.3), value: scene.lives)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(scene.lives) can")
+                .allowsHitTesting(false)
 
                 Spacer()
 

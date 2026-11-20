@@ -43,7 +43,7 @@ enum HammerVariant: String, CaseIterable, Identifiable, Codable {
 
     /// Açılması için gereken en iyi skor (nil = her zaman açık).
     var unlockBest: Int? {
-        self == .kristal ? 20 : nil
+        self == .kristal ? 250 : nil
     }
 
     var palette: HammerPalette {

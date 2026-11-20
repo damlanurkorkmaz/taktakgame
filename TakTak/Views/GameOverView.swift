@@ -6,6 +6,8 @@ struct GameOverView: View {
     let newRecord: Bool
     let coinsEarned: Int
     let canContinue: Bool
+    /// true: son can kaçan çiviyle gitti, false: eğilen çiviyle.
+    var escaped = false
     var onContinue: () -> Void
     var onRetry: () -> Void
     var onMenu: () -> Void
@@ -15,7 +17,7 @@ struct GameOverView: View {
             let small = geo.size.height < 720
             let tall = geo.size.height >= 800
             VStack(spacing: 0) {
-                DisplayTitle(text: "ÇİVİ EĞİLDİ!", size: small ? 46 : 56, color: .tkRed, shadow: .tkRedShadow, depth: 5)
+                DisplayTitle(text: escaped ? "ÇİVİ KAÇTI!" : "ÇİVİ EĞİLDİ!", size: small ? 46 : 56, color: .tkRed, shadow: .tkRedShadow, depth: 5)
                     .rotationEffect(.degrees(-3))
                     .padding(.top, small ? 8 : 28)
 
@@ -32,7 +34,7 @@ struct GameOverView: View {
                         HStack(spacing: 10) {
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 20, weight: .bold))
-                            Text("Kaldığın yerden devam et (1 hak)")
+                            Text("Bir can al, devam et (1 hak)")
                                 .font(TKFont.black(16))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -86,13 +88,13 @@ struct GameOverView: View {
             compact: true,
             nails: [
                 .init(x: 70, state: .driven),
-                .init(x: 195, state: .bent),
-                .init(x: 320, state: .driven)
+                .init(x: 195, state: escaped ? .driven : .bent),
+                .init(x: escaped ? 305 : 320, state: escaped ? .up : .driven)
             ],
             nailSize: 90
         )
         return Image(uiImage: img)
-            .accessibilityLabel("Eğilmiş çivi")
+            .accessibilityLabel(escaped ? "Kaçan çivi" : "Eğilmiş çivi")
     }
 
     private var scoreCard: some View {
