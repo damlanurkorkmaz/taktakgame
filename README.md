@@ -21,7 +21,7 @@ Tek dokunuşla oynanan bir çivi çakma oyunu. Göstergedeki ibre yeşil bölged
 
 1. Xcode 16 veya üstü gerekir. Minimum iOS sürümü 17.0, uygulama yalnızca iPhone'da dikey çalışır.
 2. `TakTak.xcodeproj` dosyasını aç.
-3. **TakTak** hedefinde *Signing & Capabilities* sekmesinden kendi **Team**'ini seç. Bundle ID'yi (`com.damlanurkorkmaz.taktak`) değiştirmen gerekebilir.
+3. **TakTak** hedefinde *Signing & Capabilities* sekmesinden kendi **Team**'ini seç. Bundle ID'yi (`com.damlanur.taktakgame`) değiştirmen gerekebilir.
 4. Bir iPhone simülatörü ya da kendi telefonunu seçip ▶ ile çalıştır.
 
 Proje Xcode 16'nın klasör senkronizasyonunu kullanır: `TakTak/` içine eklenen her dosya otomatik olarak projeye dahil olur.
@@ -46,7 +46,7 @@ Zorluk ayarları `TakTak/Game/GameScene.swift` içindeki `Tuning` bölümündedi
 
 Depoda hazır bir `codemagic.yaml` var. İlk derlemeden önce:
 
-1. Apple Developer hesabında bundle ID'yi kaydet: `com.damlanurkorkmaz.taktak` (değiştirirsen hem projede hem `codemagic.yaml`'da değiştir).
+1. Apple Developer hesabında bundle ID'yi kaydet: `com.damlanur.taktakgame` (değiştirirsen hem projede hem `codemagic.yaml`'da değiştir).
 2. App Store Connect'te uygulama kaydını oluştur. *Genel Bilgiler*'deki **Apple ID** numarasını `codemagic.yaml`'daki `APP_STORE_APPLE_ID`'ye yaz.
 3. App Store Connect > Kullanıcılar ve Erişim > Entegrasyonlar'dan bir API anahtarı (App Manager rolü) oluştur. Codemagic > Team integrations > Developer Portal'a ekle. Verdiğin adı `codemagic.yaml`'daki `app_store_connect:` satırına yaz.
 4. Codemagic > Code signing identities'e bir Apple Distribution sertifikası ekle (ya da Codemagic'e oluşturt).

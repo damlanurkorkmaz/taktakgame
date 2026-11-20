@@ -3,7 +3,7 @@
 # Kullanmadan önce:
 # 1. Codemagic > Team settings > Team integrations > Developer Portal'a App Store Connect API anahtarını ekle.
 #    Anahtarın Codemagic'teki adını aşağıdaki `app_store_connect:` satırına yaz.
-# 2. Apple Developer hesabında bundle ID'yi (com.damlanurkorkmaz.taktak) kaydet,
+# 2. Apple Developer hesabında bundle ID'yi (com.damlanur.taktakgame) kaydet,
 #    App Store Connect'te uygulama kaydını oluştur.
 # 3. App Store Connect > Uygulama > Genel Bilgiler'deki "Apple ID" numarasını APP_STORE_APPLE_ID'ye yaz.
 # 4. Codemagic > Code signing identities'e bir "Apple Distribution" sertifikası ekle
@@ -19,7 +19,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.damlanurkorkmaz.taktak
+        bundle_identifier: com.damlanur.taktakgame
       vars:
         XCODE_PROJECT: "TakTak.xcodeproj"
         XCODE_SCHEME: "TakTak"
