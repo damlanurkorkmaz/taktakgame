@@ -23,7 +23,7 @@ workflows:
       vars:
         XCODE_PROJECT: "TakTak.xcodeproj"
         XCODE_SCHEME: "TakTak"
-        APP_STORE_APPLE_ID: 0000000000      # App Store Connect'teki Apple ID ile değiştir
+        APP_STORE_APPLE_ID: 6837406855      # App Store Connect'teki Apple ID ile değiştir
       xcode: latest
     triggering:
       events:
