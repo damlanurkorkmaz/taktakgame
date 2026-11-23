@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: GameStore
+    @Environment(\.scenePhase) private var scenePhase
 
     private enum Screen: Equatable {
         case menu, map, shop, quests
@@ -10,6 +11,7 @@ struct RootView: View {
 
     private enum Overlay: Equatable {
         case daily
+        case tutorial(level: Int)
         case feature(Feature, level: Int)
         case intro(Int)
     }
@@ -18,6 +20,9 @@ struct RootView: View {
     @State private var overlay: Overlay?
     @State private var gameID = UUID()
     @State private var checkedDaily = false
+    @State private var startBoosts: Set<Powerup> = []
+    @State private var tutorialRun = false
+    @State private var servicesStarted = false
 
     var body: some View {
         ZStack {
@@ -54,6 +59,8 @@ struct RootView: View {
                 GameView(
                     mode: mode,
                     hammer: store.equipped,
+                    boosts: startBoosts,
+                    tutorial: tutorialRun,
                     onExit: {
                         if case .level = mode { screen = .map } else { screen = .menu }
                     },
@@ -70,7 +77,14 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.22), value: screen)
         .animation(.easeOut(duration: 0.2), value: overlay)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                store.refreshQuestsIfNeeded()
+                MusicPlayer.shared.play()
+            }
+        }
         .onAppear {
+            startServices()
             // Açılışta ödül varsa göster: oyuncuyu her gün geri getiren şey.
             store.refreshQuestsIfNeeded()
             guard !checkedDaily else { return }
@@ -86,6 +100,11 @@ struct RootView: View {
         switch o {
         case .daily:
             DailyRewardView(onClose: { overlay = nil })
+        case .tutorial(let level):
+            TutorialView {
+                store.markTutorialDone()
+                continueToLevel(level)
+            }
         case .feature(let feature, let level):
             FeatureIntroView(feature: feature) {
                 store.markSeen(feature)
@@ -94,7 +113,7 @@ struct RootView: View {
         case .intro(let n):
             LevelIntroView(
                 level: Level.get(n),
-                onStart: { startLevel(n) },
+                onStart: { boosts in startLevel(n, boosts: boosts) },
                 onClose: { overlay = nil }
             )
         }
@@ -113,6 +132,14 @@ struct RootView: View {
             return
         }
         if case .game = screen { screen = .map }
+        if n == 1 && !store.tutorialDone {
+            overlay = .tutorial(level: 1)
+            return
+        }
+        continueToLevel(n)
+    }
+
+    private func continueToLevel(_ n: Int) {
         let level = Level.get(n)
         if let f = level.newFeature, !store.hasSeen(f) {
             overlay = .feature(f, level: n)
@@ -121,15 +148,32 @@ struct RootView: View {
         }
     }
 
-    private func startLevel(_ n: Int) {
+    private func startLevel(_ n: Int, boosts: Set<Powerup>) {
         overlay = nil
+        startBoosts = boosts
+        tutorialRun = n == 1 && store.stars(for: 1) == 0
         gameID = UUID()
         screen = .game(.level(n))
     }
 
     private func startEndless() {
         overlay = nil
+        startBoosts = []
+        tutorialRun = false
         gameID = UUID()
         screen = .game(.endless)
+    }
+
+    /// Reklam, satın alma ve Game Center servislerini bir kez başlatır.
+    private func startServices() {
+        guard !servicesStarted else { return }
+        servicesStarted = true
+        AdsManager.shared.start()
+        let iap = StoreManager.shared
+        iap.onCoins = { amount in store.addCoins(amount) }
+        iap.onNoAds = { owned in store.setNoAds(owned) }
+        iap.start()
+        GameCenterManager.shared.authenticate()
+        MusicPlayer.shared.play()
     }
 }

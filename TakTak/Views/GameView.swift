@@ -19,6 +19,8 @@ struct GameView: View {
     @State private var levelResult: LevelResultInfo?
     @State private var paused = false
     @State private var banner: Quest?
+    @State private var adNotReady = false
+    @State private var watchingAd = false
     @State private var bannerQueue: [Quest] = []
 
     struct RunResult: Equatable {
@@ -36,11 +38,12 @@ struct GameView: View {
         let bestStreak: Int
     }
 
-    init(mode: GameMode, hammer: HammerVariant, onExit: @escaping () -> Void, onRequestLevel: @escaping (Int) -> Void) {
+    init(mode: GameMode, hammer: HammerVariant, boosts: Set<Powerup> = [], tutorial: Bool = false,
+         onExit: @escaping () -> Void, onRequestLevel: @escaping (Int) -> Void) {
         self.mode = mode
         let level: Level?
         if case .level(let n) = mode { level = Level.get(n) } else { level = nil }
-        _scene = StateObject(wrappedValue: GameScene(hammer: hammer, level: level))
+        _scene = StateObject(wrappedValue: GameScene(hammer: hammer, level: level, boosts: boosts, tutorial: tutorial))
         self.onExit = onExit
         self.onRequestLevel = onRequestLevel
     }
@@ -50,8 +53,17 @@ struct GameView: View {
             SpriteView(scene: scene, isPaused: paused, preferredFramesPerSecond: 60, options: [.ignoresSiblingOrder])
                 .ignoresSafeArea()
 
+            if scene.slowLeft > 0 {
+                Rectangle()
+                    .strokeBorder(Color(hex: 0x7CC8F5).opacity(0.5), lineWidth: 6)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+
             hud
 
+            powerupBar
             if let banner {
                 VStack {
                     QuestBanner(quest: banner)
@@ -79,14 +91,11 @@ struct GameView: View {
                     coinsEarned: r.coins,
                     canContinue: !scene.hasContinued,
                     escaped: scene.lastLoss == .escaped,
+                    lossTitle: lossTitle,
                     menuTitle: scene.level == nil ? "Ana menü" : "Harita",
-                    onContinue: {
-                        // Şimdilik her oyunda bir kez ücretsiz devam hakkı.
-                        // İleride ödüllü reklam eklenirse (ör. AdMob RewardedAd), reklam izlenince
-                        // scene.revive() çağrılmalı ve butonun yazısı buna göre değiştirilmeli.
-                        withAnimation(.easeOut(duration: 0.2)) { failResult = nil }
-                        scene.revive()
-                    },
+                    continueWithAd: !store.noAds,
+                    hammer: store.equipped,
+                    onContinue: continueRun,
                     onRetry: {
                         withAnimation(.easeOut(duration: 0.2)) { failResult = nil }
                         scene.restart()
@@ -122,6 +131,12 @@ struct GameView: View {
                 let done = store.handle(event)
                 if !done.isEmpty { enqueue(done) }
             }
+            scene.onPowerupCollected = { p in store.addPowerup(p) }
+        }
+        .alert("Reklam hazır değil", isPresented: $adNotReady) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text("Birkaç saniye sonra tekrar dene.")
         }
         .onChange(of: scene.isOver) { _, over in
             guard over else { return }
@@ -129,6 +144,7 @@ struct GameView: View {
             var record = false
             if scene.level == nil {
                 record = store.finishRun(score: scene.score, coins: earned)
+                GameCenterManager.shared.submit(score: scene.score)
             } else {
                 store.failLevel(runCoins: earned)
             }
@@ -156,6 +172,104 @@ struct GameView: View {
             }
         }
         .statusBarHidden()
+    }
+
+    // MARK: - Devam (ödüllü reklam)
+
+    private var lossTitle: String? {
+        switch scene.lastLoss {
+        case .escaped: return nil
+        case .red: return "KIRMIZI ÇİVİ!"
+        case .bomb: return "BOMBA PATLADI!"
+        }
+    }
+
+    private func continueRun() {
+        guard !watchingAd else { return }
+        if store.noAds {
+            revive()
+            return
+        }
+        watchingAd = true
+        AdsManager.shared.showRewarded { earned in
+            watchingAd = false
+            if earned {
+                revive()
+            } else if !AdsManager.shared.isReady {
+                adNotReady = true
+            }
+        }
+    }
+
+    private func revive() {
+        withAnimation(.easeOut(duration: 0.2)) { failResult = nil }
+        scene.revive()
+    }
+
+    // MARK: - Güçlendirici çubuğu
+
+    private var powerupBar: some View {
+        VStack {
+            Spacer()
+            HStack(spacing: 10) {
+                ForEach(Powerup.allCases) { p in
+                    powerupButton(p)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 6)
+        }
+        .opacity(failResult == nil && levelResult == nil ? 1 : 0)
+    }
+
+    private func powerupButton(_ p: Powerup) -> some View {
+        let count = store.count(of: p)
+        let left: Double = p == .zone ? scene.zoneLeft : (p == .slow ? scene.slowLeft : 0)
+        let active = left > 0
+        return Button {
+            guard !active, count > 0 else {
+                Haptics.miss()
+                return
+            }
+            if scene.use(p) { store.consumePowerup(p) }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: p.icon)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(p.color)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(p.title)
+                        .font(TKFont.black(12))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(active ? "AKTİF" : "\(count) adet")
+                        .font(TKFont.black(11))
+                        .foregroundStyle(active ? p.color : (count > 0 ? Color.tkYellow : Color.tkMuted))
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(Color.tkCream)
+            .padding(.horizontal, 10)
+            .frame(height: 52)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.tkPanel))
+            .overlay(alignment: .bottom) {
+                if active {
+                    GeometryReader { geo in
+                        Capsule()
+                            .fill(p.color)
+                            .frame(width: geo.size.width * left, height: 4)
+                    }
+                    .frame(height: 4)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+                }
+            }
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(active ? p.color : .clear, lineWidth: 3))
+            .opacity(count > 0 || active ? 1 : 0.55)
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel("\(p.title), \(active ? "aktif" : "\(count) adet")")
     }
 
     // MARK: - Görev bildirimi
@@ -194,7 +308,7 @@ struct GameView: View {
                 Spacer()
 
                 HStack(spacing: 6) {
-                    ForEach(0..<GameScene.maxLives, id: \.self) { i in
+                    ForEach(0..<max(GameScene.maxLives, scene.lives), id: \.self) { i in
                         Image(systemName: "heart.fill")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(i < scene.lives ? Color.tkRed : Color.tkPanel)

@@ -41,6 +41,31 @@ enum HammerVariant: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    // MARK: - Çekiç güçleri
+
+    /// Mağazada gösterilen güç açıklaması
+    var power: String {
+        switch self {
+        case .klasik: return "Standart çekiç, sürprizsiz."
+        case .tokmak: return "İyi bölgesi %20 daha geniş."
+        case .balyoz: return "Zorlu çiviyi tek tam vuruşta gömer."
+        case .altin: return "Her gömülen çivi +1 para."
+        case .neon: return "Seri çarpanı 5 yerine 3 mükemmelde artar."
+        case .kristal: return "Mükemmel bölgesi %30 daha geniş."
+        }
+    }
+
+    /// "İyi" penceresinin çarpanı
+    var goodWindowScale: CGFloat { self == .tokmak ? 1.2 : 1 }
+    /// "Mükemmel" penceresinin çarpanı
+    var perfectWindowScale: CGFloat { self == .kristal ? 1.3 : 1 }
+    /// Zorlu çivi tek mükemmel vuruşta gömülür
+    var drivesHardInOne: Bool { self == .balyoz }
+    /// Gömülen her çivi için ek para
+    var coinBonus: Int { self == .altin ? 1 : 0 }
+    /// Seri çarpanının kaç mükemmelde bir arttığı
+    var streakStep: Int { self == .neon ? 3 : 5 }
+
     /// Açılması için gereken en iyi skor (nil = her zaman açık).
     var unlockBest: Int? {
         self == .kristal ? 250 : nil

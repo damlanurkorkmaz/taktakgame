@@ -198,8 +198,13 @@ struct QuestCard: View {
 
 /// Görev sandığı açılınca çıkan ödül kartı (tasarımdaki G4).
 struct QuestChestView: View {
+    @EnvironmentObject private var store: GameStore
     let reward: GameStore.QuestChestReward
     var onDone: () -> Void
+
+    @State private var doubled = false
+    @State private var loading = false
+    @State private var adNotReady = false
 
     var body: some View {
         ZStack {
@@ -224,7 +229,7 @@ struct QuestChestView: View {
                     .padding(.top, 8)
 
                 HStack(spacing: 10) {
-                    rewardTile(icon: AnyView(CoinIcon(size: 30)), value: "+\(reward.coins.tk)", label: "para")
+                    rewardTile(icon: AnyView(CoinIcon(size: 30)), value: "+\((doubled ? reward.coins * 2 : reward.coins).tk)", label: "para")
                     rewardTile(icon: AnyView(StarIcon(filled: true, size: 30)), value: "+\(reward.stars)", label: "yıldız")
                 }
                 .padding(.top, 6)
@@ -261,13 +266,38 @@ struct QuestChestView: View {
                 .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: 0x33271F)))
                 .padding(.top, 10)
 
+                if !doubled {
+                    Button(action: double) {
+                        HStack(spacing: 10) {
+                            if loading {
+                                ProgressView().tint(Color.tkGreen)
+                            } else {
+                                Image(systemName: store.noAds ? "sparkles" : "play.rectangle.fill")
+                                    .font(.system(size: 18, weight: .bold))
+                            }
+                            Text(store.noAds ? "Paranı 2 katına çıkar" : "Reklam izle, parayı 2 katına çıkar")
+                                .font(TKFont.black(15))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .foregroundStyle(Color.tkGreen)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.tkGreen, lineWidth: 3))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableStyle())
+                    .disabled(loading)
+                    .padding(.top, 16)
+                }
+
                 Button(action: onDone) {
                     Text("TOPLA")
                         .font(TKFont.display(32))
                         .frame(height: 66)
                 }
                 .buttonStyle(ChunkyButtonStyle())
-                .padding(.top, 18)
+                .padding(.top, doubled ? 18 : 12)
 
                 Text("Yarın 3 yeni görev seni bekliyor. Seriyi bozma!")
                     .font(TKFont.extraBold(13))
@@ -281,6 +311,31 @@ struct QuestChestView: View {
             .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkPanel, lineWidth: 3))
             .padding(20)
         }
+        .alert("Reklam hazır değil", isPresented: $adNotReady) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text("Birkaç saniye sonra tekrar dene.")
+        }
+    }
+
+    private func double() {
+        guard !doubled else { return }
+        if store.noAds {
+            grantDouble()
+            return
+        }
+        loading = true
+        AdsManager.shared.showRewarded { earned in
+            loading = false
+            if earned { grantDouble() } else { adNotReady = true }
+        }
+    }
+
+    private func grantDouble() {
+        store.addCoins(reward.coins)
+        Haptics.success()
+        SoundFX.shared.play(.coin)
+        withAnimation(.spring(duration: 0.3)) { doubled = true }
     }
 
     private func rewardTile(icon: AnyView, value: String, label: String) -> some View {

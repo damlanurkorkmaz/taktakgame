@@ -36,11 +36,11 @@ enum LevelGoal: Equatable {
 
 /// Seviyelerle kademeli olarak tanıtılan yenilikler.
 enum Feature: String, CaseIterable {
-    case gold, hard, pairs, red, tempo
+    case gold, hard, pairs, red, tempo, plate, spring, ice, bomb
 
     var badge: String {
         switch self {
-        case .gold, .hard, .red: return "YENİ ÇİVİ!"
+        case .gold, .hard, .red, .plate, .spring, .ice, .bomb: return "YENİ ÇİVİ!"
         case .pairs, .tempo: return "YENİ!"
         }
     }
@@ -52,6 +52,10 @@ enum Feature: String, CaseIterable {
         case .pairs: return "Çift Çivi"
         case .red: return "Kırmızı Çivi"
         case .tempo: return "Hız Dalgaları"
+        case .plate: return "Metal Levha"
+        case .spring: return "Yaylı Çivi"
+        case .ice: return "Buz Çivisi"
+        case .bomb: return "Bomba Çivi"
         }
     }
 
@@ -62,6 +66,10 @@ enum Feature: String, CaseIterable {
         case .pairs: return "Bazen iki çivi art arda gelir. Hızlı ol!"
         case .red: return "Buna vurma! Vurursan bir can gider. Bırak bant alıp götürsün."
         case .tempo: return "Bant ara ara hızlanır ve yavaşlar. Uyarıları takip et."
+        case .plate: return "Sadece MÜKEMMEL vuruş işe yarar. İyi vuruşta çekiç seker; kenardan vurursan eğilir."
+        case .spring: return "Vurulunca yarıya girer ama bir adım geri zıplar ve tekrar çekicin altına gelir. İkinci vuruşla tamamla."
+        case .ice: return "Bant üstünde kayar: oka yaklaşırken aniden hızlanır ya da yavaşlar. Gözünü ayırma."
+        case .bomb: return "Tam vurursan patlar ve yanındaki 2 çiviyi de gömer. Kenardan vurursan bir can gider."
         }
     }
 
@@ -73,6 +81,10 @@ enum Feature: String, CaseIterable {
         case .pairs: return "İki çivi art arda gelebilir."
         case .red: return "Vurma! Vurursan can gider."
         case .tempo: return "Bant ara ara hızlanıp yavaşlar."
+        case .plate: return "Sadece mükemmel vuruş işe yarar."
+        case .spring: return "Vurunca geri zıplar, iki vuruş ister."
+        case .ice: return "Bant üstünde kayar."
+        case .bomb: return "Tam vur, yanındakileri de göm."
         }
     }
 
@@ -82,6 +94,10 @@ enum Feature: String, CaseIterable {
         case .gold: return .gold
         case .hard: return .hard
         case .red: return .red
+        case .plate: return .plate
+        case .spring: return .spring
+        case .ice: return .ice
+        case .bomb: return .bomb
         case .pairs, .tempo: return .steel
         }
     }
@@ -97,6 +113,10 @@ struct Level: Identifiable, Equatable {
     let goldChance: Double
     let hardChance: Double
     let redChance: Double
+    let plateChance: Double
+    let springChance: Double
+    let iceChance: Double
+    let bombChance: Double
     let pairs: Bool
     let tempo: Bool
     let isBoss: Bool
@@ -116,7 +136,10 @@ struct Level: Identifiable, Equatable {
     static let endlessUnlockLevel = 10
 
     /// Yeniliklerin ilk çıktığı seviyeler
-    static let featureLevels: [Int: Feature] = [3: .gold, 6: .hard, 8: .pairs, 13: .red, 16: .tempo]
+    static let featureLevels: [Int: Feature] = [
+        3: .gold, 6: .hard, 8: .pairs, 13: .red, 16: .tempo,
+        20: .plate, 22: .spring, 24: .ice, 27: .bomb
+    ]
 
     private static func make(_ n: Int) -> Level {
         let boss = n % 5 == 0
@@ -159,6 +182,10 @@ struct Level: Identifiable, Equatable {
             goldChance: hasGold ? 0.08 : 0,
             hardChance: hard,
             redChance: red,
+            plateChance: n >= 20 ? (n == 20 ? 0.18 : 0.07) : 0,
+            springChance: n >= 22 ? (n == 22 ? 0.18 : 0.07) : 0,
+            iceChance: n >= 24 ? (n == 24 ? 0.18 : 0.07) : 0,
+            bombChance: n >= 27 ? (n == 27 ? 0.14 : 0.05) : 0,
             pairs: n >= 8,
             tempo: n >= 16,
             isBoss: boss,

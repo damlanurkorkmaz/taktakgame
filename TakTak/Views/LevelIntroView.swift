@@ -2,9 +2,16 @@ import SwiftUI
 
 /// Seviye başlamadan önce gösterilen hedef kartı (tasarımdaki "Seviye hedefi").
 struct LevelIntroView: View {
+    @EnvironmentObject private var store: GameStore
     let level: Level
-    var onStart: () -> Void
+    /// Seçilen başlangıç güçlendiricileriyle başlat (envanterden düşülmüş / satın alınmış olarak)
+    var onStart: (Set<Powerup>) -> Void
     var onClose: () -> Void
+
+    @State private var selected: Set<Powerup> = []
+
+    /// Seviye öncesi seçilebilenler (yavaş çekim oyun içinde kullanılır)
+    private let preLevel: [Powerup] = [.zone, .life]
 
     var body: some View {
         ZStack {
@@ -94,31 +101,31 @@ struct LevelIntroView: View {
                     .accessibilityElement(children: .combine)
                 }
 
-                HStack(spacing: 8) {
-                    ForEach(0..<GameScene.maxLives, id: \.self) { _ in
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(Color.tkRed)
-                    }
-                    Text("\(GameScene.maxLives) can")
-                        .font(TKFont.extraBold(14))
-                        .foregroundStyle(Color.tkMuted)
-                        .padding(.leading, 4)
-                }
-                .padding(.top, 16)
-                .accessibilityElement(children: .combine)
+                boosterPicker
+                    .padding(.top, 14)
 
-                Button(action: onStart) {
+                Button(action: start) {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 26, weight: .black))
                         Text("BAŞLA")
                             .font(TKFont.display(34))
+                        if cost > 0 {
+                            HStack(spacing: 5) {
+                                CoinIcon(size: 15)
+                                Text(cost.tk)
+                            }
+                            .font(TKFont.black(16))
+                            .foregroundStyle(Color.tkYellow)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Color.tkBg))
+                        }
                     }
                     .frame(height: 70)
                 }
                 .buttonStyle(ChunkyButtonStyle())
-                .padding(.top, 18)
+                .padding(.top, 16)
             }
             .padding(EdgeInsets(top: 14, leading: 22, bottom: 22, trailing: 22))
             .foregroundStyle(Color.tkCream)
@@ -126,6 +133,84 @@ struct LevelIntroView: View {
             .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkPanel, lineWidth: 3))
             .padding(20)
         }
+    }
+
+    // MARK: - Başlangıç güçlendiricileri
+
+    /// Envanterde olmayan seçimlerin toplam fiyatı
+    private var cost: Int {
+        selected.filter { store.count(of: $0) == 0 }.reduce(0) { $0 + $1.price }
+    }
+
+    private var boosterPicker: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("GÜÇLENDİRİCİ SEÇ")
+                    .font(TKFont.black(13))
+                    .tracking(1)
+                Spacer()
+                Text("\(GameScene.maxLives + (selected.contains(.life) ? 1 : 0)) can")
+                    .font(TKFont.extraBold(13))
+                    .foregroundStyle(Color.tkMuted)
+            }
+            HStack(spacing: 10) {
+                ForEach(preLevel) { p in
+                    boosterTile(p)
+                }
+            }
+        }
+    }
+
+    private func boosterTile(_ p: Powerup) -> some View {
+        let isOn = selected.contains(p)
+        let owned = store.count(of: p)
+        let affordable = owned > 0 || store.coins >= cost + p.price
+        return Button {
+            if isOn {
+                selected.remove(p)
+            } else if affordable {
+                selected.insert(p)
+            } else {
+                Haptics.miss()
+                return
+            }
+            Haptics.tap()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: p.icon)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(p.color)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(p.title)
+                        .font(TKFont.black(14))
+                        .foregroundStyle(Color.tkCream)
+                    Text(owned > 0 ? "\(owned) adet" : "\(p.price) para")
+                        .font(TKFont.black(12))
+                        .foregroundStyle(owned > 0 ? Color.tkGreen : (affordable || isOn ? Color.tkYellow : Color.tkRed))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(isOn ? Color.tkGreen : Color.tkPanelLine)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 58)
+            .background(RoundedRectangle(cornerRadius: 16).fill(isOn ? Color.tkPanelHi : Color.tkPanel))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(isOn ? p.color : .clear, lineWidth: 3))
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel("\(p.title), \(p.preLevelText)")
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    private func start() {
+        var boosts: Set<Powerup> = []
+        for p in selected {
+            if store.consumePowerup(p) || (store.buyPowerup(p) && store.consumePowerup(p)) {
+                boosts.insert(p)
+            }
+        }
+        onStart(boosts)
     }
 
     private var goalTint: NailTint {

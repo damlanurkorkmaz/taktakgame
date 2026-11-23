@@ -10,6 +10,7 @@ struct MenuView: View {
     var onQuests: () -> Void
 
     @State private var showSettings = false
+    @State private var showGCInfo = false
 
     var body: some View {
         GeometryReader { geo in
@@ -30,6 +31,13 @@ struct MenuView: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(store.totalStars) yıldız")
                     Spacer()
+                    Button {
+                        if !GameCenterManager.shared.showLeaderboard() { showGCInfo = true }
+                    } label: {
+                        IconSquare(systemName: "trophy.fill")
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel("Sıralama")
                     Button { showSettings = true } label: {
                         IconSquare(systemName: "slider.horizontal.3")
                     }
@@ -101,7 +109,12 @@ struct MenuView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environmentObject(store)
-                .presentationDetents([.height(300)])
+                .presentationDetents([.height(400)])
+        }
+        .alert("Game Center", isPresented: $showGCInfo) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text("Sıralamayı görmek için Ayarlar > Game Center'dan giriş yap. Sonsuz mod rekorların oraya kaydedilir.")
         }
     }
 

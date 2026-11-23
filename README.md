@@ -41,6 +41,35 @@ Her gün oyuncunun ilerlemesine uygun 3 görev çıkar (ör. *40 mükemmel vuru�
 
 Görev türleri, hedefler ve ödüller `TakTak/Model/Quest.swift` içinde.
 
+## Çekiçler, güçlendiriciler, özel çiviler
+
+- **Çekiç güçleri:** Lastik Tokmak (iyi bölgesi %20 geniş), Balyoz (zorlu çivi tek vuruş), Altın Çekiç (çivi başına +1 para), Neon (seri her 3 mükemmelde artar), Kristal (mükemmel bölgesi %30 geniş). Ayarlar `HammerVariant.swift` içinde.
+- **Güçlendiriciler:** Geniş bölge (8 sn), Yavaş çekim (5 sn), +1 Can. Oyun içinde alttaki butonlarla kullanılır, seviyeden önce seçilebilir (geniş bölge ilk 10 sn, +1 can ile 4 canla başlama), mağazadan parayla alınır, bantta arada çıkan baloncuk vurulunca kazanılır.
+- **Özel çiviler (seviye 20+):** Metal levha (yalnızca mükemmel), yaylı (geri zıplar), buz (kayar), bomba (tam vurunca yanındakileri gömer, kenardan vurunca can gider).
+
+## Gelir ve sosyal: App Store öncesi yapılacaklar
+
+Kod hazır, ama aşağıdaki hesap ayarları senin tarafında yapılmalı:
+
+1. **AdMob (ödüllü reklam)**
+   - admob.google.com'da uygulamayı ekle, bir **Ödüllü (Rewarded)** reklam birimi oluştur.
+   - `TakTak-Info.plist` içindeki `GADApplicationIdentifier` değerini kendi uygulama kimliğinle,
+     `TakTak/Services/AdsManager.swift` içindeki `rewardedUnitID` değerini kendi reklam birimi kimliğinle değiştir.
+     Şu an Google'ın **test** kimlikleri var: test reklamları gösterir, para kazandırmaz.
+   - Reklamlar iki yerde: "Reklam izle, bir can al" (oyun sonu) ve görev sandığında "parayı 2 katına çıkar".
+2. **Uygulama içi satın almalar** (App Store Connect > Uygulama İçi Satın Almalar; önce *Ücretli Uygulamalar* sözleşmesi imzalanmalı)
+   - `com.damlanur.taktakgame.noads` — Tüketilemez: Reklamsız (ödüller reklam izlemeden verilir)
+   - `com.damlanur.taktakgame.coins1000`, `coins3000`, `coins8000` — Tüketilebilir para paketleri
+3. **Game Center:** App Store Connect > Game Center'da `taktak_endless` kimlikli bir sıralama oluştur (yüksek skor iyi). Sonsuz mod rekoru oraya gönderilir; menüdeki kupa butonu sıralamayı açar.
+4. **Uygulama gizliliği:** AdMob eklendiği için App Store Connect'teki *Uygulama Gizliliği* bölümünü güncelle (cihaz kimliği, kullanım verisi, reklam verisi; "üçüncü taraf reklam" amaçlı). Gizlilik politikası sayfası da reklamdan bahsetmeli.
+5. **Kod imzalama:** Projede Game Center yetkisi (`TakTak.entitlements`) var. İmzalama hatası alırsan Apple Developer > Identifiers'da uygulamanın Game Center yeteneğinin açık olduğunu kontrol edip profili yeniden oluştur.
+
+## Cila
+
+- **Müzik:** `TakTak/Audio/workshop_loop.wav`, 100 BPM, 19,2 sn kesintisiz döngü (kodla üretildi). Ayarlar'dan kapatılabilir; başka bir uygulamada müzik çalıyorsa başlamaz.
+- **İlk açılış eğitimi:** 1. seviyeden önce 3 adımlık kart, ilk oyunda bant yavaş ve çivi yerindeyken "ŞİMDİ DOKUN!" yardımı.
+- **Rekor kartı:** Sonsuz modda rekor kırınca 1080x1350 boyutunda paylaşılabilir bir görsel oluşur.
+
 ## Özellikler
 
 - SpriteKit oyun ekranı: çekiç sallanması, kıvılcımlar, ekran sarsıntısı, titreşim ve kodla üretilmiş sesler
@@ -89,13 +118,6 @@ App Store Connect'te ayrıca şunlar gerekir:
 - **Uygulama gizliliği:** "Veri toplanmıyor" (Data Not Collected).
 - **Yaş derecelendirmesi** anketi (şiddet vb. yok, 4+ çıkar).
 - **Ekran görüntüleri:** 6.9" iPhone (ör. iPhone 16 Pro Max simülatörü) için en az bir set.
-
-## Sonraki sürümler için fikirler
-
-- Ödüllü reklam: "Devam et" hakkını reklamla vermek (AdMob vb. eklenince App Privacy bilgileri ve izin metni güncellenmeli)
-- Reklamsız satın alma (StoreKit 2)
-- Game Center sıralaması
-- Tahta ve çivi temaları
 
 ## Lisanslar
 

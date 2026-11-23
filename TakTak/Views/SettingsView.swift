@@ -16,7 +16,20 @@ struct SettingsView: View {
                 .padding(.top, 8)
 
             toggleRow("Ses", icon: "speaker.wave.2.fill", isOn: $store.soundOn)
+            toggleRow("Müzik", icon: "music.note", isOn: $store.musicOn)
             toggleRow("Titreşim", icon: "iphone.radiowaves.left.and.right", isOn: $store.hapticsOn)
+
+            Button {
+                Task { await StoreManager.shared.restore() }
+                Haptics.tap()
+            } label: {
+                Label("Satın alımları geri yükle", systemImage: "arrow.clockwise")
+                    .font(TKFont.black(15))
+                    .foregroundStyle(Color.tkMuted)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+            }
+            .buttonStyle(PressableStyle())
 
             Spacer(minLength: 0)
 

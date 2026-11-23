@@ -12,7 +12,13 @@ struct GameOverView: View {
     let canContinue: Bool
     /// true: son can kaçan çiviyle gitti, false: kırmızı çiviye vurulduğu için.
     var escaped = true
+    /// Kırmızı / bomba gibi özel kayıp başlığı
+    var lossTitle: String? = nil
     var menuTitle = "Ana menü"
+    /// Devam hakkı ödüllü reklamla mı (reklamsız alındıysa false)
+    var continueWithAd = true
+    /// Rekor kartında gösterilecek çekiç
+    var hammer: HammerVariant = .klasik
     var onContinue: () -> Void
     var onRetry: () -> Void
     var onMenu: () -> Void
@@ -37,9 +43,9 @@ struct GameOverView: View {
                 if canContinue {
                     Button(action: onContinue) {
                         HStack(spacing: 10) {
-                            Image(systemName: "heart.fill")
+                            Image(systemName: continueWithAd ? "play.rectangle.fill" : "heart.fill")
                                 .font(.system(size: 20, weight: .bold))
-                            Text("Bir can al, devam et (1 hak)")
+                            Text(continueWithAd ? "Reklam izle, bir can al" : "Bir can al, devam et (1 hak)")
                                 .font(TKFont.black(16))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -66,6 +72,20 @@ struct GameOverView: View {
                 .buttonStyle(ChunkyButtonStyle())
                 .padding(.top, 14)
 
+                if newRecord && showBest, let card = ShareCard.image(score: score, hammer: hammer) {
+                    ShareLink(item: Image(uiImage: card),
+                              preview: SharePreview("Tak Tak! rekorum: \(score)", image: Image(uiImage: card))) {
+                        Label("Rekor kartını paylaş", systemImage: "sparkles")
+                            .font(TKFont.black(16))
+                            .foregroundStyle(Color.tkBg)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Color.tkOrange))
+                    }
+                    .buttonStyle(PressableStyle())
+                    .padding(.top, 12)
+                }
+
                 Spacer(minLength: 12)
 
                 HStack(spacing: 12) {
@@ -88,7 +108,7 @@ struct GameOverView: View {
     }
 
     private var headline: String {
-        title ?? (escaped ? "ÇİVİ KAÇTI!" : "KIRMIZI ÇİVİ!")
+        title ?? lossTitle ?? (escaped ? "ÇİVİ KAÇTI!" : "KIRMIZI ÇİVİ!")
     }
 
     private func titleSize(small: Bool) -> CGFloat {

@@ -58,6 +58,23 @@ final class GameStore: ObservableObject {
     @Published private(set) var questSwapUsed: Bool { didSet { defaults.set(questSwapUsed, forKey: Keys.questSwapUsed) } }
     @Published private(set) var questChestDate: Date? { didSet { defaults.set(questChestDate, forKey: Keys.questChestDate) } }
     @Published private(set) var questStreak: Int { didSet { defaults.set(questStreak, forKey: Keys.questStreak) } }
+
+    // Güçlendiriciler, satın almalar, cila
+    @Published private(set) var powerups: [Powerup: Int] {
+        didSet {
+            let dict = Dictionary(uniqueKeysWithValues: powerups.map { ($0.key.rawValue, $0.value) })
+            defaults.set(dict, forKey: Keys.powerups)
+        }
+    }
+    /// "Reklamsız" satın alındı: ödüller reklam izlemeden verilir
+    @Published private(set) var noAds: Bool { didSet { defaults.set(noAds, forKey: Keys.noAds) } }
+    @Published var musicOn: Bool {
+        didSet {
+            defaults.set(musicOn, forKey: Keys.music)
+            MusicPlayer.shared.enabled = musicOn
+        }
+    }
+    @Published private(set) var tutorialDone: Bool { didSet { defaults.set(tutorialDone, forKey: Keys.tutorialDone) } }
     @Published private(set) var lastClaim: Date? { didSet { defaults.set(lastClaim, forKey: Keys.lastClaim) } }
 
     private enum Keys {
@@ -67,6 +84,7 @@ final class GameStore: ObservableObject {
         static let chestStarsUsed = "chestStarsUsed", seenFeatures = "seenFeatures"
         static let bonusStars = "bonusStars", quests = "quests", questDate = "questDate"
         static let questSwapUsed = "questSwapUsed", questChestDate = "questChestDate", questStreak = "questStreak"
+        static let powerups = "powerups", noAds = "noAds", music = "musicOn", tutorialDone = "tutorialDone"
     }
 
     init() {
@@ -75,7 +93,8 @@ final class GameStore: ObservableObject {
             Keys.coins: GameStore.startingCoins,
             Keys.sound: true,
             Keys.haptics: true,
-            Keys.unlockedLevel: 1
+            Keys.unlockedLevel: 1,
+            Keys.music: true
         ])
         coins = d.integer(forKey: Keys.coins)
         best = d.integer(forKey: Keys.best)
@@ -101,9 +120,20 @@ final class GameStore: ObservableObject {
         questSwapUsed = d.bool(forKey: Keys.questSwapUsed)
         questChestDate = d.object(forKey: Keys.questChestDate) as? Date
         questStreak = d.integer(forKey: Keys.questStreak)
+        let rawPowerups = d.dictionary(forKey: Keys.powerups) as? [String: Int]
+        if let rawPowerups {
+            powerups = Dictionary(uniqueKeysWithValues: rawPowerups.compactMap { k, v in Powerup(rawValue: k).map { ($0, v) } })
+        } else {
+            // Yeni oyuncuya hediye: her birinden bir tane
+            powerups = [.zone: 1, .slow: 1, .life: 1]
+        }
+        noAds = d.bool(forKey: Keys.noAds)
+        musicOn = d.bool(forKey: Keys.music)
+        tutorialDone = d.bool(forKey: Keys.tutorialDone)
 
         SoundFX.shared.enabled = soundOn
         Haptics.enabled = hapticsOn
+        MusicPlayer.shared.enabled = musicOn
         refreshQuestsIfNeeded()
     }
 
@@ -315,6 +345,41 @@ final class GameStore: ObservableObject {
         let h = mins / 60, m = mins % 60
         return h > 0 ? "\(h) sa \(m) dk" : "\(m) dk"
     }
+
+    // MARK: - Güçlendiriciler
+
+    func count(of p: Powerup) -> Int { powerups[p] ?? 0 }
+
+    func addPowerup(_ p: Powerup, _ n: Int = 1) {
+        powerups[p] = count(of: p) + n
+    }
+
+    /// Envanterden bir tane harcar. Yoksa false.
+    @discardableResult
+    func consumePowerup(_ p: Powerup) -> Bool {
+        guard count(of: p) > 0 else { return false }
+        powerups[p] = count(of: p) - 1
+        return true
+    }
+
+    /// Parayla bir tane satın alır (envantere ekler). Para yetmezse false.
+    @discardableResult
+    func buyPowerup(_ p: Powerup) -> Bool {
+        guard coins >= p.price else { return false }
+        coins -= p.price
+        addPowerup(p)
+        return true
+    }
+
+    // MARK: - Satın alma, reklam, eğitim
+
+    func addCoins(_ n: Int) { coins += n }
+
+    func setNoAds(_ value: Bool) {
+        if noAds != value { noAds = value }
+    }
+
+    func markTutorialDone() { tutorialDone = true }
 
     // MARK: - Günlük ödül
 
