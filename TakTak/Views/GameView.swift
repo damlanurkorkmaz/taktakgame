@@ -18,6 +18,8 @@ struct GameView: View {
     @State private var failResult: RunResult?
     @State private var levelResult: LevelResultInfo?
     @State private var paused = false
+    @State private var banner: Quest?
+    @State private var bannerQueue: [Quest] = []
 
     struct RunResult: Equatable {
         let score: Int
@@ -49,6 +51,18 @@ struct GameView: View {
                 .ignoresSafeArea()
 
             hud
+
+            if let banner {
+                VStack {
+                    QuestBanner(quest: banner)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 70)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(5)
+            }
 
             if paused {
                 pauseOverlay
@@ -103,6 +117,12 @@ struct GameView: View {
             }
         }
         .background(Color.tkBg.ignoresSafeArea())
+        .onAppear {
+            scene.onEvent = { event in
+                let done = store.handle(event)
+                if !done.isEmpty { enqueue(done) }
+            }
+        }
         .onChange(of: scene.isOver) { _, over in
             guard over else { return }
             let earned = scene.runCoins
@@ -122,6 +142,8 @@ struct GameView: View {
             let stars = Level.stars(accuracy: scene.accuracy, bestStreak: scene.bestStreak)
             let result = store.completeLevel(level, stars: stars, runCoins: scene.runCoins)
             scene.consumeRunCoins()
+            let done = store.handle(.levelComplete(level: level, stars: stars, redHits: scene.redHits))
+            if !done.isEmpty { enqueue(done) }
             withAnimation(.easeOut(duration: 0.25)) {
                 levelResult = LevelResultInfo(
                     stars: stars,
@@ -134,6 +156,24 @@ struct GameView: View {
             }
         }
         .statusBarHidden()
+    }
+
+    // MARK: - Görev bildirimi
+
+    private func enqueue(_ quests: [Quest]) {
+        bannerQueue.append(contentsOf: quests)
+        if banner == nil { showNextBanner() }
+    }
+
+    private func showNextBanner() {
+        guard !bannerQueue.isEmpty else { return }
+        let next = bannerQueue.removeFirst()
+        Haptics.success()
+        withAnimation(.spring(duration: 0.35)) { banner = next }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation(.easeIn(duration: 0.25)) { banner = nil }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showNextBanner() }
+        }
     }
 
     // MARK: - Üst bilgi

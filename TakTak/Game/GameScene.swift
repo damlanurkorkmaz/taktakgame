@@ -37,6 +37,9 @@ final class GameScene: SKScene, ObservableObject {
     /// Seviye modunda oynanan seviye; sonsuz modda nil.
     let level: Level?
 
+    /// Görev sistemi için olaylar (mükemmel vuruş, gömülen çivi, seri).
+    var onEvent: ((GameEvent) -> Void)?
+
     // MARK: - Tur istatistikleri (yıldız hesabı için)
 
     private(set) var perfects = 0
@@ -506,6 +509,8 @@ final class GameScene: SKScene, ObservableObject {
         streak += 1
         bestStreak = max(bestStreak, streak)
         multiplier = min(Tuning.maxMultiplier, 1 + streak / Tuning.streakStep)
+        onEvent?(.perfect)
+        onEvent?(.streak(streak))
         let points = Tuning.perfectPoints * multiplier
         score += points
         beltSpeed = min(maxSpeed, beltSpeed + Tuning.perfectBoost)
@@ -541,6 +546,7 @@ final class GameScene: SKScene, ObservableObject {
     /// Çivi tamamen gömüldü: para, zorlu çivi bonusu ve seviye ilerlemesi.
     private func finish(_ nail: NailNode) {
         nail.resolved = true
+        onEvent?(.driven(nail.kind))
         switch nail.kind {
         case .normal, .red:
             runCoins += 1

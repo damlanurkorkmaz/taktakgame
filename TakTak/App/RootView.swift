@@ -4,7 +4,7 @@ struct RootView: View {
     @EnvironmentObject private var store: GameStore
 
     private enum Screen: Equatable {
-        case menu, map, shop
+        case menu, map, shop, quests
         case game(GameMode)
     }
 
@@ -34,7 +34,8 @@ struct RootView: View {
                     onMap: { screen = .map },
                     onEndless: startEndless,
                     onShop: { screen = .shop },
-                    onDaily: { show(.daily) }
+                    onDaily: { show(.daily) },
+                    onQuests: { screen = .quests }
                 )
                 .transition(.opacity)
             case .map:
@@ -45,6 +46,9 @@ struct RootView: View {
                 .transition(.opacity)
             case .shop:
                 ShopView(onBack: { screen = .menu })
+                    .transition(.move(edge: .trailing))
+            case .quests:
+                QuestsView(onBack: { screen = .menu })
                     .transition(.move(edge: .trailing))
             case .game(let mode):
                 GameView(
@@ -68,6 +72,7 @@ struct RootView: View {
         .animation(.easeOut(duration: 0.2), value: overlay)
         .onAppear {
             // Açılışta ödül varsa göster: oyuncuyu her gün geri getiren şey.
+            store.refreshQuestsIfNeeded()
             guard !checkedDaily else { return }
             checkedDaily = true
             if store.dailyState.canClaim {

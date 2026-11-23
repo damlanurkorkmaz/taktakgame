@@ -30,6 +30,17 @@ Bant sürekli akar, üstündeki çiviler çekicin altından geçer. Çivi sarı 
 
 Seviyeler `TakTak/Model/Level.swift` içinde kurallarla üretilir (hedef, hız, çivi karışımı). Yıldız eşikleri ve ödüller de aynı dosyada.
 
+## Günlük görevler
+
+Her gün oyuncunun ilerlemesine uygun 3 görev çıkar (ör. *40 mükemmel vuruş yap*, *Bir patron seviyesi geç*, *Tek oyunda 15'lik seri yap*). Görevler gece yarısı yenilenir.
+
+- Biten görevin ödülü (para ya da yıldız) Görevler ekranından alınır; oyun sırasında görev bitince üstte "GÖREV TAMAM!" kartı çıkar.
+- Bitmemiş bir görev günde bir kez başka bir görevle değiştirilebilir.
+- Üç görevin ödülü de alınınca **görev sandığı** açılır: 250 para, 3 yıldız, %30 ihtimalle bir çekiç.
+- **Görev serisi:** Sandığı her gün açan oyuncunun ödülü her gün %10 artar (en fazla 2 kat); bir gün atlanırsa seri sıfırlanır.
+
+Görev türleri, hedefler ve ödüller `TakTak/Model/Quest.swift` içinde.
+
 ## Özellikler
 
 - SpriteKit oyun ekranı: çekiç sallanması, kıvılcımlar, ekran sarsıntısı, titreşim ve kodla üretilmiş sesler

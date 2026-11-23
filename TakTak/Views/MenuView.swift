@@ -7,6 +7,7 @@ struct MenuView: View {
     var onEndless: () -> Void
     var onShop: () -> Void
     var onDaily: () -> Void
+    var onQuests: () -> Void
 
     @State private var showSettings = false
 
@@ -14,8 +15,20 @@ struct MenuView: View {
         GeometryReader { geo in
             let small = geo.size.height < 720
             VStack(spacing: 0) {
-                HStack {
+                HStack(spacing: 8) {
                     CoinPill(text: store.coins.tk)
+                    HStack(spacing: 6) {
+                        StarIcon(filled: true, size: 20)
+                        Text("\(store.totalStars)")
+                            .font(TKFont.black(17))
+                            .monospacedDigit()
+                    }
+                    .padding(.leading, 10)
+                    .padding(.trailing, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Color.tkPanel))
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(store.totalStars) yıldız")
                     Spacer()
                     Button { showSettings = true } label: {
                         IconSquare(systemName: "slider.horizontal.3")
@@ -27,8 +40,8 @@ struct MenuView: View {
                 Spacer(minLength: 4)
 
                 VStack(spacing: -4) {
-                    DisplayTitle(text: "TAK", size: small ? 66 : 86)
-                    DisplayTitle(text: "TAK!", size: small ? 66 : 86)
+                    DisplayTitle(text: "TAK", size: small ? 58 : 76)
+                    DisplayTitle(text: "TAK!", size: small ? 58 : 76)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Tak Tak")
@@ -44,32 +57,15 @@ struct MenuView: View {
                 // overlay içinde olduğu için sütunun genişliğini etkilemez, ekran kaymaz.
                 Color.clear
                     .frame(maxWidth: .infinity)
-                    .frame(height: small ? 180 : 230)
+                    .frame(height: small ? 150 : 200)
                     .overlay {
                         MenuHero(hammer: store.equipped)
-                            .scaleEffect(small ? 0.78 : 1)
+                            .scaleEffect(small ? 0.65 : 0.87)
                     }
                     .padding(.top, 8)
 
-                HStack(spacing: 18) {
-                    HStack(spacing: 8) {
-                        StarIcon(filled: true, size: 20)
-                        Text("\(store.totalStars)")
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(store.totalStars) yıldız")
-                    if store.endlessUnlocked {
-                        HStack(spacing: 8) {
-                            Image(systemName: "trophy.fill")
-                                .foregroundStyle(Color.tkYellow)
-                            Text("REKOR: \(store.best)")
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-                .font(TKFont.black(18))
-                .tracking(1)
-                .padding(.top, 12)
+                QuestStrip(action: onQuests)
+                    .padding(.top, 10)
 
                 Button(action: onPlay) {
                     HStack(spacing: 12) {
