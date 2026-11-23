@@ -45,7 +45,7 @@ final class StoreManager: ObservableObject {
         guard updatesTask == nil else { return }
         // Uygulama dışında tamamlanan / ertelenen satın almalar
         updatesTask = Task { [weak self] in
-            for await result in Transaction.updates {
+            for await result in StoreKit.Transaction.updates {
                 await self?.handle(result)
             }
         }
@@ -103,7 +103,7 @@ final class StoreManager: ObservableObject {
     @MainActor
     private func refreshEntitlements() async {
         var hasNoAds = false
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             if case .verified(let t) = result, t.productID == ProductID.noAds, t.revocationDate == nil {
                 hasNoAds = true
             }
@@ -112,7 +112,7 @@ final class StoreManager: ObservableObject {
     }
 
     @MainActor
-    private func handle(_ result: VerificationResult<Transaction>) async {
+    private func handle(_ result: VerificationResult<StoreKit.Transaction>) async {
         guard case .verified(let t) = result else { return }
         if t.productID == ProductID.noAds {
             onNoAds?(t.revocationDate == nil)
