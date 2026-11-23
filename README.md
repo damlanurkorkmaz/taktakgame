@@ -53,9 +53,10 @@ Kod hazır, ama aşağıdaki hesap ayarları senin tarafında yapılmalı:
 
 1. **AdMob (ödüllü reklam)**
    - admob.google.com'da uygulamayı ekle, bir **Ödüllü (Rewarded)** reklam birimi oluştur.
-   - `TakTak-Info.plist` içindeki `GADApplicationIdentifier` değerini kendi uygulama kimliğinle,
-     `TakTak/Services/AdsManager.swift` içindeki `rewardedUnitID` değerini kendi reklam birimi kimliğinle değiştir.
-     Şu an Google'ın **test** kimlikleri var: test reklamları gösterir, para kazandırmaz.
+   - Gerçek kimlikler eklendi: uygulama kimliği `TakTak-Info.plist` > `GADApplicationIdentifier`,
+     ödüllü reklam birimi `TakTak/Services/AdsManager.swift` > `liveRewardedUnitID`.
+   - Debug ve TestFlight derlemelerinde otomatik olarak Google'ın **test** reklamı gösterilir;
+     gerçek reklamlar yalnızca App Store sürümünde çıkar (kendi reklamına tıklamak hesabı askıya aldırabilir).
    - Reklamlar iki yerde: "Reklam izle, bir can al" (oyun sonu) ve görev sandığında "parayı 2 katına çıkar".
 2. **Uygulama içi satın almalar** (App Store Connect > Uygulama İçi Satın Almalar; önce *Ücretli Uygulamalar* sözleşmesi imzalanmalı)
    - `com.damlanur.taktakgame.noads` — Tüketilemez: Reklamsız (ödüller reklam izlemeden verilir)

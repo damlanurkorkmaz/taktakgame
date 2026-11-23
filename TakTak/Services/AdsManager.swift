@@ -3,15 +3,34 @@ import UIKit
 
 /// Ödüllü reklamlar (Google AdMob).
 ///
-/// ÖNEMLİ: Aşağıdaki kimlikler Google'ın TEST kimlikleridir. App Store'a göndermeden önce
-/// AdMob hesabından aldığın gerçek kimliklerle değiştir:
-/// - `rewardedUnitID` (bu dosya)
-/// - `GADApplicationIdentifier` (TakTak-Info.plist)
+/// Kimlikler:
+/// - Uygulama kimliği: `GADApplicationIdentifier` (TakTak-Info.plist)
+/// - Ödüllü reklam birimi: `liveRewardedUnitID` (bu dosya)
+///
+/// Geliştirme (Debug) ve TestFlight derlemelerinde Google'ın test reklam birimi kullanılır:
+/// kendi gerçek reklamlarına tıklamak AdMob hesabının askıya alınmasına yol açabilir.
+/// Gerçek reklamlar yalnızca App Store'dan indirilen sürümde gösterilir.
 final class AdsManager: NSObject, ObservableObject, GADFullScreenContentDelegate {
     static let shared = AdsManager()
 
+    /// Gerçek ödüllü reklam birimi (AdMob > Tak Tak > Reklam birimleri)
+    static let liveRewardedUnitID = "ca-app-pub-5668432995057749/8773502690"
     /// Google'ın test ödüllü reklam birimi
-    static let rewardedUnitID = "ca-app-pub-3940256099942544/1712485313"
+    static let testRewardedUnitID = "ca-app-pub-3940256099942544/1712485313"
+
+    /// Debug ya da TestFlight ise test birimi, App Store sürümünde gerçek birim.
+    static var rewardedUnitID: String {
+        #if DEBUG
+        return testRewardedUnitID
+        #else
+        return isTestFlight ? testRewardedUnitID : liveRewardedUnitID
+        #endif
+    }
+
+    /// TestFlight derlemelerinin makbuzu "sandboxReceipt" adını taşır.
+    private static var isTestFlight: Bool {
+        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+    }
 
     @Published private(set) var isReady = false
 
