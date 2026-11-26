@@ -48,9 +48,10 @@ struct MenuView: View {
 
                 Spacer(minLength: 4)
 
-                VStack(spacing: -4) {
-                    DisplayTitle(text: "TAK", size: small ? 58 : 76)
-                    DisplayTitle(text: "TAK!", size: small ? 58 : 76)
+                let titleSize: CGFloat = small ? 76 : 100
+                VStack(spacing: -titleSize * 0.22) {
+                    DisplayTitle(text: "TAK", size: titleSize, depth: 8)
+                    DisplayTitle(text: "TAK!", size: titleSize, depth: 8)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Tak Tak")
