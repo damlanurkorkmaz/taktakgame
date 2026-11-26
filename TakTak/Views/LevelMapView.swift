@@ -40,15 +40,6 @@ struct LevelMapView: View {
     private let rowH: CGFloat = 96
     private let nodeH: CGFloat = 112
 
-    private func scrollToCurrent(_ proxy: ScrollViewProxy, animated: Bool) {
-        let target = store.currentLevel
-        if animated {
-            withAnimation(.easeInOut(duration: 0.4)) { proxy.scrollTo(target, anchor: .center) }
-        } else {
-            proxy.scrollTo(target, anchor: .center)
-        }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -58,32 +49,28 @@ struct LevelMapView: View {
             GeometryReader { geo in
                 let w = geo.size.width
                 let total = CGFloat(Level.count) * rowH + 110
-                ScrollViewReader { proxy in
-                    ScrollView(showsIndicators: false) {
-                        ZStack(alignment: .topLeading) {
-                            trail(width: w, total: total)
-                            ForEach(Level.all) { level in
-                                let pt = point(level.number, width: w, total: total)
-                                // .position tüm alanı kapladığı için scrollTo hep ortaya (15. seviye) gidiyordu.
-                                // Sabit çerçeve + dış padding ile her düğümün gerçek yeri olur.
-                                node(level)
-                                    .frame(width: 120, height: nodeH)
-                                    .id(level.number)
-                                    .padding(.leading, max(0, pt.x - 60))
-                                    .padding(.top, max(0, pt.y - nodeH / 2))
-                            }
-                        }
-                        .frame(width: w, height: total, alignment: .topLeading)
-                    }
-                    .defaultScrollAnchor(.bottom)
-                    .onAppear {
-                        scrollToCurrent(proxy, animated: false)
-                        // İlk yerleşim bittikten sonra bir kez daha (bazı cihazlarda ilk çağrı erken kalıyor)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            scrollToCurrent(proxy, animated: false)
+                let h = geo.size.height
+                // Sıradaki seviyenin ekranın ortasına geleceği başlangıç noktası.
+                // defaultScrollAnchor içeriğin y oranını görünümün aynı oranıyla hizalar;
+                // ortalamak için oran = (nokta - yarım ekran) / (içerik - ekran).
+                let target = point(store.currentLevel, width: w, total: total).y
+                let range = max(1, total - h)
+                let fraction = min(1, max(0, (target - h / 2) / range))
+                ScrollView(showsIndicators: false) {
+                    ZStack(alignment: .topLeading) {
+                        trail(width: w, total: total)
+                        ForEach(Level.all) { level in
+                            let pt = point(level.number, width: w, total: total)
+                            node(level)
+                                .frame(width: 120, height: nodeH)
+                                .padding(.leading, max(0, pt.x - 60))
+                                .padding(.top, max(0, pt.y - nodeH / 2))
                         }
                     }
+                    .frame(width: w, height: total, alignment: .topLeading)
                 }
+                .defaultScrollAnchor(UnitPoint(x: 0.5, y: fraction))
+                .id("map-\(store.currentLevel)-\(Int(h))")
             }
 
             footer
