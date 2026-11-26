@@ -20,12 +20,12 @@ enum HammerVariant: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .klasik: return "Klasik"
-        case .tokmak: return "Lastik Tokmak"
-        case .balyoz: return "Balyoz"
-        case .altin: return "Altın Çekiç"
-        case .neon: return "Neon"
-        case .kristal: return "Kristal"
+        case .klasik: return L("Klasik", "Classic")
+        case .tokmak: return L("Lastik Tokmak", "Rubber Mallet")
+        case .balyoz: return L("Balyoz", "Sledgehammer")
+        case .altin: return L("Altın Çekiç", "Golden Hammer")
+        case .neon: return L("Neon", "Neon")
+        case .kristal: return L("Kristal", "Crystal")
         }
     }
 
@@ -46,12 +46,12 @@ enum HammerVariant: String, CaseIterable, Identifiable, Codable {
     /// Mağazada gösterilen güç açıklaması
     var power: String {
         switch self {
-        case .klasik: return "Standart çekiç, sürprizsiz."
-        case .tokmak: return "İyi bölgesi %20 daha geniş."
-        case .balyoz: return "Zorlu çiviyi tek tam vuruşta gömer."
-        case .altin: return "Her gömülen çivi +1 para."
-        case .neon: return "Seri çarpanı 5 yerine 3 mükemmelde artar."
-        case .kristal: return "Mükemmel bölgesi %30 daha geniş."
+        case .klasik: return L("Standart çekiç, sürprizsiz.", "A trusty hammer. No surprises.")
+        case .tokmak: return L("İyi bölgesi %20 daha geniş.", "Good zone is 20% wider.")
+        case .balyoz: return L("Zorlu çiviyi tek tam vuruşta gömer.", "Drives tough nails in one perfect hit.")
+        case .altin: return L("Her gömülen çivi +1 para.", "+1 coin for every nail driven.")
+        case .neon: return L("Seri çarpanı 5 yerine 3 mükemmelde artar.", "Streak multiplier grows every 3 perfects, not 5.")
+        case .kristal: return L("Mükemmel bölgesi %30 daha geniş.", "Perfect zone is 30% wider.")
         }
     }
 

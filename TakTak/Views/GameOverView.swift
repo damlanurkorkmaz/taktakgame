@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct GameOverView: View {
-    /// nil ise kayıp sebebine göre başlık ("ÇİVİ KAÇTI!" / "KIRMIZI ÇİVİ!")
+    /// nil ise kayıp sebebine göre başlık (L("ÇİVİ KAÇTI!", "NAIL ESCAPED!") / L("KIRMIZI ÇİVİ!", "RED NAIL!"))
     var title: String? = nil
     let score: Int
     let best: Int
@@ -14,7 +14,7 @@ struct GameOverView: View {
     var escaped = true
     /// Kırmızı / bomba gibi özel kayıp başlığı
     var lossTitle: String? = nil
-    var menuTitle = "Ana menü"
+    var menuTitle = L("Ana menü", "Main menu")
     /// Devam hakkı ödüllü reklamla mı (reklamsız alındıysa false)
     var continueWithAd = true
     /// Rekor kartında gösterilecek çekiç
@@ -45,7 +45,7 @@ struct GameOverView: View {
                         HStack(spacing: 10) {
                             Image(systemName: continueWithAd ? "play.rectangle.fill" : "heart.fill")
                                 .font(.system(size: 20, weight: .bold))
-                            Text(continueWithAd ? "Reklam izle, bir can al" : "Bir can al, devam et (1 hak)")
+                            Text(continueWithAd ? L("Reklam izle, bir can al", "Watch an ad for a life") : L("Bir can al, devam et (1 hak)", "Take a life and continue (once)"))
                                 .font(TKFont.black(16))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -64,7 +64,7 @@ struct GameOverView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 28, weight: .black))
-                        Text("TEKRAR")
+                        Text(L("TEKRAR", "RETRY"))
                             .font(TKFont.display(38))
                     }
                     .frame(height: 76)
@@ -74,8 +74,8 @@ struct GameOverView: View {
 
                 if newRecord && showBest, let card = ShareCard.image(score: score, hammer: hammer) {
                     ShareLink(item: Image(uiImage: card),
-                              preview: SharePreview("Tak Tak! rekorum: \(score)", image: Image(uiImage: card))) {
-                        Label("Rekor kartını paylaş", systemImage: "sparkles")
+                              preview: SharePreview(L("Tak Tak! rekorum: \(score)", "My Tak Tak! record: \(score)"), image: Image(uiImage: card))) {
+                        Label(L("Rekor kartını paylaş", "Share record card"), systemImage: "sparkles")
                             .font(TKFont.black(16))
                             .foregroundStyle(Color.tkBg)
                             .frame(maxWidth: .infinity)
@@ -90,12 +90,12 @@ struct GameOverView: View {
 
                 HStack(spacing: 12) {
                     Button(action: onMenu) {
-                        panelLabel(menuTitle, icon: menuTitle == "Ana menü" ? "house.fill" : "map.fill")
+                        panelLabel(menuTitle, icon: menuTitle == L("Ana menü", "Main menu") ? "house.fill" : "map.fill")
                     }
                     .buttonStyle(PressableStyle())
 
-                    ShareLink(item: "Tak Tak!'ta \(score) puan yaptım. Beni geçebilir misin?") {
-                        panelLabel("Paylaş", icon: "square.and.arrow.up")
+                    ShareLink(item: L("Tak Tak!'ta \(score) puan yaptım. Beni geçebilir misin?", "I scored \(score) in Tak Tak! Can you beat me?")) {
+                        panelLabel(L("Paylaş", "Share"), icon: "square.and.arrow.up")
                     }
                     .buttonStyle(PressableStyle())
                 }
@@ -108,7 +108,7 @@ struct GameOverView: View {
     }
 
     private var headline: String {
-        title ?? lossTitle ?? (escaped ? "ÇİVİ KAÇTI!" : "KIRMIZI ÇİVİ!")
+        title ?? lossTitle ?? (escaped ? L("ÇİVİ KAÇTI!", "NAIL ESCAPED!") : L("KIRMIZI ÇİVİ!", "RED NAIL!"))
     }
 
     private func titleSize(small: Bool) -> CGFloat {
@@ -127,13 +127,13 @@ struct GameOverView: View {
             nailSize: 90
         )
         return Image(uiImage: img)
-            .accessibilityLabel(escaped ? "Kaçan çivi" : "Vurulmuş kırmızı çivi")
+            .accessibilityLabel(escaped ? L("Kaçan çivi", "Escaped nail") : L("Vurulmuş kırmızı çivi", "Hit red nail"))
     }
 
     private var scoreCard: some View {
         VStack(spacing: 4) {
             if newRecord {
-                Text("YENİ REKOR!")
+                Text(L("YENİ REKOR!", "NEW RECORD!"))
                     .font(TKFont.black(14))
                     .tracking(1)
                     .foregroundStyle(Color(hex: 0x1C3A2E))
@@ -142,7 +142,7 @@ struct GameOverView: View {
                     .background(Capsule().fill(Color.tkGreen))
                     .padding(.bottom, 4)
             }
-            Text("SKOR")
+            Text(L("SKOR", "SCORE"))
                 .font(TKFont.extraBold(14))
                 .tracking(1)
                 .foregroundStyle(Color.tkMuted)
@@ -153,11 +153,11 @@ struct GameOverView: View {
                 .displayTrim(80)
             HStack(spacing: 12) {
                 if showBest {
-                    statBox(title: "EN İYİ") {
+                    statBox(title: L("EN İYİ", "BEST")) {
                         Text("\(best)")
                     }
                 }
-                statBox(title: "KAZANILAN") {
+                statBox(title: L("KAZANILAN", "EARNED")) {
                     HStack(spacing: 6) {
                         CoinIcon(size: 20)
                         Text("+\(coinsEarned)")

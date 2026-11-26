@@ -14,7 +14,7 @@ struct ShareCardView: View {
                 .frame(height: 130)
                 .padding(.top, 90)
 
-            Text("YENİ REKOR")
+            Text(L("YENİ REKOR", "NEW RECORD"))
                 .font(TKFont.black(40))
                 .tracking(4)
                 .foregroundStyle(Color(hex: 0x1C3A2E))
@@ -44,7 +44,7 @@ struct ShareCardView: View {
 
             Spacer(minLength: 0)
 
-            Text("Beni geçebilir misin?")
+            Text(L("Beni geçebilir misin?", "Can you beat me?"))
                 .font(TKFont.black(52))
                 .foregroundStyle(Color.tkMuted)
                 .padding(.bottom, 90)

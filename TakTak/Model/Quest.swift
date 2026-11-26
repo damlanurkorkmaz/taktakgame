@@ -48,15 +48,15 @@ enum QuestKind: String, Codable, CaseIterable {
 
     func title(_ goal: Int) -> String {
         switch self {
-        case .perfects: return "\(goal) mükemmel vuruş yap"
-        case .drive: return "\(goal) çivi çak"
-        case .streak: return "Tek oyunda \(goal)'lik seri yap"
-        case .levels: return "\(goal) seviye geç"
-        case .boss: return "Bir patron seviyesi geç"
-        case .hard: return "\(goal) zorlu çivi göm"
-        case .gold: return "\(goal) altın çivi göm"
-        case .threeStars: return "Bir seviyeyi 3 yıldızla geç"
-        case .noRed: return "Kırmızıya hiç vurmadan seviye geç"
+        case .perfects: return L("\(goal) mükemmel vuruş yap", "Land \(goal) perfect hits")
+        case .drive: return L("\(goal) çivi çak", "Drive \(goal) nails")
+        case .streak: return L("Tek oyunda \(goal)'lik seri yap", "Get a \(goal) streak in one game")
+        case .levels: return L("\(goal) seviye geç", "Clear \(goal) levels")
+        case .boss: return L("Bir patron seviyesi geç", "Clear a boss level")
+        case .hard: return L("\(goal) zorlu çivi göm", "Drive \(goal) tough nails")
+        case .gold: return L("\(goal) altın çivi göm", "Drive \(goal) golden nails")
+        case .threeStars: return L("Bir seviyeyi 3 yıldızla geç", "Clear a level with 3 stars")
+        case .noRed: return L("Kırmızıya hiç vurmadan seviye geç", "Clear a level without hitting a red nail")
         }
     }
 }

@@ -14,9 +14,9 @@ struct QuestsView: View {
                     IconSquare(systemName: "chevron.left")
                 }
                 .buttonStyle(PressableStyle())
-                .accessibilityLabel("Geri")
+                .accessibilityLabel(L("Geri", "Back"))
                 Spacer()
-                Text("GÖREVLER")
+                Text(L("GÖREVLER", "QUESTS"))
                     .font(TKFont.display(34))
                     .displayTrim(34)
                     .accessibilityAddTraits(.isHeader)
@@ -28,7 +28,7 @@ struct QuestsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "clock")
                         .font(.system(size: 15, weight: .bold))
-                    Text("Yeni görevler: ")
+                    Text(L("Yeni görevler: ", "New quests in: "))
                         .foregroundColor(.tkMuted)
                     + Text(GameStore.timeUntilTomorrow(from: context.date))
                         .foregroundColor(.tkCream)
@@ -69,11 +69,11 @@ struct QuestsView: View {
         HStack(spacing: 14) {
             ChestIcon()
             VStack(alignment: .leading, spacing: 4) {
-                Text("Görev sandığı")
+                Text(L("Görev sandığı", "Quest chest"))
                     .font(TKFont.black(16))
                 Text(store.questChestClaimedToday
-                     ? "Toplandı · yarın yeni görevler"
-                     : "3 görevi de bitir · \(GameStore.questChestCoins) para + \(GameStore.questChestStars) yıldız")
+                     ? L("Toplandı · yarın yeni görevler", "Collected · new quests tomorrow")
+                     : L("3 görevi de bitir · \(GameStore.questChestCoins) para + \(GameStore.questChestStars) yıldız", "Finish all 3 · \(GameStore.questChestCoins) coins + \(GameStore.questChestStars) stars"))
                     .font(TKFont.extraBold(13))
                     .foregroundStyle(Color.tkMuted)
                     .lineLimit(2)
@@ -95,13 +95,13 @@ struct QuestsView: View {
                         withAnimation(.spring(duration: 0.3)) { chestReward = r }
                     }
                 } label: {
-                    Text("AÇ")
+                    Text(L("AÇ", "OPEN"))
                         .font(TKFont.display(22))
                         .frame(width: 64, height: 44)
                 }
                 .buttonStyle(ChunkyButtonStyle(radius: 14, depth: 5))
                 .frame(width: 64)
-                .accessibilityLabel("Görev sandığını aç")
+                .accessibilityLabel(L("Görev sandığını aç", "Open quest chest"))
             }
         }
         .padding(16)
@@ -136,7 +136,7 @@ struct QuestCard: View {
                         }
                         if quest.rewardStars > 0 {
                             StarIcon(filled: true, size: 16)
-                            Text("+\(quest.rewardStars) yıldız")
+                            Text(L("+\(quest.rewardStars) yıldız", "+\(quest.rewardStars) stars"))
                         }
                     }
                     .font(TKFont.black(14))
@@ -150,15 +150,15 @@ struct QuestCard: View {
                         Haptics.success()
                         SoundFX.shared.play(.coin)
                     } label: {
-                        Text("AL")
+                        Text(L("AL", "CLAIM"))
                             .font(TKFont.display(22))
                             .frame(width: 72, height: 46)
                     }
                     .buttonStyle(ChunkyButtonStyle(fill: .tkGreen, shadow: .tkGreenShadow, textColor: Color(hex: 0x1C3A2E), radius: 14, depth: 5))
                     .frame(width: 72)
-                    .accessibilityLabel("Ödülü al: \(quest.title)")
+                    .accessibilityLabel(L("Ödülü al: \(quest.title)", "Claim reward: \(quest.title)"))
                 } else if quest.claimed {
-                    Label("ALINDI", systemImage: "checkmark")
+                    Label(L("ALINDI", "CLAIMED"), systemImage: "checkmark")
                         .font(TKFont.black(13))
                         .foregroundStyle(Color.tkGreen)
                 } else if store.canSwapQuest {
@@ -173,7 +173,7 @@ struct QuestCard: View {
                             .background(RoundedRectangle(cornerRadius: 14).fill(Color.tkBg))
                     }
                     .buttonStyle(PressableStyle())
-                    .accessibilityLabel("Görevi değiştir (günde bir kez)")
+                    .accessibilityLabel(L("Görevi değiştir (günde bir kez)", "Swap quest (once a day)"))
                 }
             }
 
@@ -214,7 +214,7 @@ struct QuestChestView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Label("3 / 3 GÖREV", systemImage: "checkmark")
+                Label(L("3 / 3 GÖREV", "3 / 3 QUESTS"), systemImage: "checkmark")
                     .font(TKFont.black(13))
                     .tracking(1)
                     .foregroundStyle(Color(hex: 0x1C3A2E))
@@ -222,7 +222,7 @@ struct QuestChestView: View {
                     .padding(.vertical, 5)
                     .background(Capsule().fill(Color.tkGreen))
 
-                DisplayTitle(text: "GÖREV SANDIĞI!", size: 36, depth: 4)
+                DisplayTitle(text: L("GÖREV SANDIĞI!", "QUEST CHEST!"), size: 36, depth: 4)
                     .padding(.top, 8)
 
                 AnimatedChest(open: opened)
@@ -231,10 +231,10 @@ struct QuestChestView: View {
                     .padding(.top, 4)
                     .onTapGesture { openChest() }
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(opened ? "Açık sandık" : "Sandığı aç")
+                    .accessibilityLabel(opened ? L("Açık sandık", "Open chest") : L("Sandığı aç", "Open the chest"))
 
                 if !opened {
-                    Text("Açmak için dokun")
+                    Text(L("Açmak için dokun", "Tap to open"))
                         .font(TKFont.black(17))
                         .foregroundStyle(Color.tkMuted)
                         .padding(.vertical, 14)
@@ -251,11 +251,16 @@ struct QuestChestView: View {
             .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkPanel, lineWidth: 3))
             .padding(20)
         }
-        .alert("Reklam hazır değil", isPresented: $adNotReady) {
-            Button("Tamam", role: .cancel) {}
+        .alert(L("Reklam hazır değil", "Ad not ready"), isPresented: $adNotReady) {
+            Button(L("Tamam", "OK"), role: .cancel) {}
         } message: {
-            Text("Birkaç saniye sonra tekrar dene.")
+            Text(L("Birkaç saniye sonra tekrar dene.", "Try again in a few seconds."))
         }
+    }
+
+    private var multiplierText: String {
+        let t = String(format: "%.1f", reward.multiplier)
+        return Lang.isTurkish ? t.replacingOccurrences(of: ".", with: ",") : t
     }
 
     private func openChest() {
@@ -273,8 +278,8 @@ struct QuestChestView: View {
     private var rewardsBlock: some View {
             VStack(spacing: 0) {
                 HStack(spacing: 10) {
-                    rewardTile(icon: AnyView(CoinIcon(size: 30)), value: "+\((doubled ? reward.coins * 2 : reward.coins).tk)", label: "para")
-                    rewardTile(icon: AnyView(StarIcon(filled: true, size: 30)), value: "+\(reward.stars)", label: "yıldız")
+                    rewardTile(icon: AnyView(CoinIcon(size: 30)), value: "+\((doubled ? reward.coins * 2 : reward.coins).tk)", label: L("para", "coins"))
+                    rewardTile(icon: AnyView(StarIcon(filled: true, size: 30)), value: "+\(reward.stars)", label: L("yıldız", "stars"))
                 }
                 .padding(.top, 6)
 
@@ -282,11 +287,11 @@ struct QuestChestView: View {
                     HStack(spacing: 12) {
                         Image(uiImage: HammerArt.image(h, size: 64, angle: -28, shadow: false))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("SÜRPRİZ!")
+                            Text(L("SÜRPRİZ!", "SURPRISE!"))
                                 .font(TKFont.black(12))
                                 .tracking(1)
                                 .foregroundStyle(Color.tkGreen)
-                            Text("\(h.title) senin")
+                            Text(L("\(h.title) senin", "\(h.title) is yours"))
                                 .font(TKFont.black(16))
                         }
                         Spacer(minLength: 0)
@@ -301,8 +306,8 @@ struct QuestChestView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "flame.fill")
                         .foregroundStyle(Color.tkOrange)
-                    (Text("\(reward.streak) günlük görev serisi").font(TKFont.black(14))
-                     + Text(" · ödüller x\(String(format: "%.1f", reward.multiplier).replacingOccurrences(of: ".", with: ","))").font(TKFont.extraBold(14)))
+                    (Text(L("\(reward.streak) günlük görev serisi", "\(reward.streak)-day quest streak")).font(TKFont.black(14))
+                     + Text(L(" · ödüller x", " · rewards x") + multiplierText).font(TKFont.extraBold(14)))
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 14)
@@ -319,7 +324,7 @@ struct QuestChestView: View {
                                 Image(systemName: store.noAds ? "sparkles" : "play.rectangle.fill")
                                     .font(.system(size: 18, weight: .bold))
                             }
-                            Text(store.noAds ? "Paranı 2 katına çıkar" : "Reklam izle, parayı 2 katına çıkar")
+                            Text(store.noAds ? L("Paranı 2 katına çıkar", "Double your coins") : L("Reklam izle, parayı 2 katına çıkar", "Watch an ad to double coins"))
                                 .font(TKFont.black(15))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -336,14 +341,14 @@ struct QuestChestView: View {
                 }
 
                 Button(action: onDone) {
-                    Text("TOPLA")
+                    Text(L("TOPLA", "COLLECT"))
                         .font(TKFont.display(32))
                         .frame(height: 66)
                 }
                 .buttonStyle(ChunkyButtonStyle())
                 .padding(.top, doubled ? 18 : 12)
 
-                Text("Yarın 3 yeni görev seni bekliyor. Seriyi bozma!")
+                Text(L("Yarın 3 yeni görev seni bekliyor. Seriyi bozma!", "3 new quests tomorrow. Don't break the streak!"))
                     .font(TKFont.extraBold(13))
                     .foregroundStyle(Color.tkMuted)
                     .multilineTextAlignment(.center)
@@ -411,7 +416,7 @@ struct QuestStrip: View {
                     }
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Günlük görevler")
+                        Text(L("Günlük görevler", "Daily quests"))
                             .font(TKFont.black(16))
                         Spacer()
                         Text("\(completedCount) / 3")
@@ -442,15 +447,15 @@ struct QuestStrip: View {
             .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.tkGreen, lineWidth: store.questsNeedAttention ? 3 : 0))
         }
         .buttonStyle(PressableStyle())
-        .accessibilityLabel("Günlük görevler, \(completedCount) / 3 tamam")
+        .accessibilityLabel(L("Günlük görevler, \(completedCount) / 3 tamam", "Daily quests, \(completedCount) / 3 done"))
     }
 
     private var completedCount: Int { store.quests.filter(\.isComplete).count }
 
     private var subtitle: String {
-        if store.questChestReady { return "Görev sandığı hazır!" }
-        if store.quests.contains(where: \.canClaim) { return "Ödül hazır · yenilenmesine \(GameStore.timeUntilTomorrow())" }
-        return "Yenilenmesine \(GameStore.timeUntilTomorrow())"
+        if store.questChestReady { return L("Görev sandığı hazır!", "Quest chest ready!") }
+        if store.quests.contains(where: \.canClaim) { return L("Ödül hazır · yenilenmesine \(GameStore.timeUntilTomorrow())", "Reward ready · resets in \(GameStore.timeUntilTomorrow())") }
+        return L("Yenilenmesine \(GameStore.timeUntilTomorrow())", "Resets in \(GameStore.timeUntilTomorrow())")
     }
 }
 
@@ -466,7 +471,7 @@ struct QuestBanner: View {
                 .frame(width: 46, height: 46)
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color.tkGreen))
             VStack(alignment: .leading, spacing: 0) {
-                Text("GÖREV TAMAM!")
+                Text(L("GÖREV TAMAM!", "QUEST DONE!"))
                     .font(TKFont.display(22))
                     .foregroundStyle(Color.tkGreen)
                     .displayTrim(22)
@@ -499,6 +504,6 @@ struct QuestBanner: View {
         .shadow(color: .black.opacity(0.35), radius: 12, y: 8)
         .rotationEffect(.degrees(-1.5))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Görev tamam: \(quest.title)")
+        .accessibilityLabel(L("Görev tamam: \(quest.title)", "Quest done: \(quest.title)"))
     }
 }

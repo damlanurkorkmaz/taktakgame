@@ -81,7 +81,7 @@ struct LevelMapView: View {
         .background(Color.tkBg.ignoresSafeArea())
         .overlay {
             if let prizes = chestPrizes {
-                ChestOpenView(title: "YILDIZ SANDIĞI", prizes: prizes) {
+                ChestOpenView(title: L("YILDIZ SANDIĞI", "STAR CHEST"), prizes: prizes) {
                     withAnimation(.easeOut(duration: 0.2)) { chestPrizes = nil }
                 }
                 .transition(.opacity)
@@ -98,7 +98,7 @@ struct LevelMapView: View {
                     IconSquare(systemName: "chevron.left")
                 }
                 .buttonStyle(PressableStyle())
-                .accessibilityLabel("Ana menü")
+                .accessibilityLabel(L("Ana menü", "Main menu"))
                 Spacer()
                 HStack(spacing: 6) {
                     StarIcon(filled: true, size: 20)
@@ -111,11 +111,11 @@ struct LevelMapView: View {
                 .padding(.vertical, 8)
                 .background(Capsule().fill(Color.tkPanel))
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(store.totalStars) yıldız")
+                .accessibilityLabel(L("\(store.totalStars) yıldız", "\(store.totalStars) stars"))
                 CoinPill(text: store.coins.tk, iconSize: 20)
             }
             VStack(spacing: 0) {
-                Text("BÖLÜM 1")
+                Text(L("BÖLÜM 1", "CHAPTER 1"))
                     .font(TKFont.extraBold(13))
                     .tracking(2)
                     .foregroundStyle(Color.tkMuted)
@@ -174,7 +174,7 @@ struct LevelMapView: View {
                         .background(Circle().fill(Color.tkYellow))
                         .background(Circle().fill(Color.tkYellowShadow).offset(y: 6))
                         .background(Circle().fill(Color.tkYellow.opacity(0.18)).frame(width: 98, height: 98))
-                    capsule(level.isBoss ? "PATRON" : "SIRADAKİ", fill: level.isBoss ? Color(hex: 0xE0503F) : .tkCream,
+                    capsule(level.isBoss ? L("PATRON", "BOSS") : L("SIRADAKİ", "NEXT"), fill: level.isBoss ? Color(hex: 0xE0503F) : .tkCream,
                             text: level.isBoss ? .tkCream : .tkBg)
                 } else if isOpen {
                     Text("\(n)")
@@ -201,7 +201,7 @@ struct LevelMapView: View {
                     .background(Circle().fill(Color(hex: 0x5A2A20)))
                     .overlay(Circle().strokeBorder(Color(hex: 0xE0503F), lineWidth: 3))
                     .background(Circle().fill(Color.tkOutline).offset(y: 5))
-                    capsule("PATRON", fill: Color(hex: 0xE0503F), text: .tkCream)
+                    capsule(L("PATRON", "BOSS"), fill: Color(hex: 0xE0503F), text: .tkCream)
                 } else {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 18, weight: .bold))
@@ -229,11 +229,11 @@ struct LevelMapView: View {
     }
 
     private func nodeLabel(_ level: Level, stars: Int, isCurrent: Bool, isOpen: Bool) -> String {
-        var s = "Seviye \(level.number)"
-        if level.isBoss { s += ", patron seviyesi" }
-        if isCurrent { return s + ", sıradaki" }
-        if isOpen { return s + ", \(stars) yıldız" }
-        return s + ", kilitli"
+        var s = L("Seviye \(level.number)", "Level \(level.number)")
+        if level.isBoss { s += L(", patron seviyesi", ", boss level") }
+        if isCurrent { return s + L(", sıradaki", ", next") }
+        if isOpen { return s + L(", \(stars) yıldız", ", \(stars) stars") }
+        return s + L(", kilitli", ", locked")
     }
 
     // MARK: - Alt kısım
@@ -244,7 +244,7 @@ struct LevelMapView: View {
                 ChestIcon()
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Sandık")
+                        Text(L("Sandık", "Chest"))
                             .font(TKFont.black(14))
                         Spacer()
                         Text("\(min(store.chestProgress, GameStore.chestCost)) / \(GameStore.chestCost)")
@@ -258,13 +258,13 @@ struct LevelMapView: View {
                 }
                 if store.chestReady {
                     Button(action: openChest) {
-                        Text("AÇ")
+                        Text(L("AÇ", "OPEN"))
                             .font(TKFont.display(22))
                             .frame(width: 64, height: 44)
                     }
                     .buttonStyle(ChunkyButtonStyle(fill: .tkGreen, shadow: .tkGreenShadow, radius: 14, depth: 5))
                     .frame(width: 64)
-                    .accessibilityLabel("Sandığı aç")
+                    .accessibilityLabel(L("Sandığı aç", "Open the chest"))
                 }
             }
             .padding(.horizontal, 16)
@@ -272,7 +272,7 @@ struct LevelMapView: View {
             .background(RoundedRectangle(cornerRadius: 20).fill(Color.tkPanel))
 
             if store.allLevelsDone {
-                Text("Bütün seviyeleri bitirdin! Sonsuz modda rekor kır.")
+                Text(L("Bütün seviyeleri bitirdin! Sonsuz modda rekor kır.", "You beat every level! Chase a record in Endless."))
                     .font(TKFont.extraBold(15))
                     .foregroundStyle(Color.tkMuted)
                     .multilineTextAlignment(.center)
@@ -282,7 +282,7 @@ struct LevelMapView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 26, weight: .black))
-                        Text("SEVİYE \(store.currentLevel)")
+                        Text(L("SEVİYE \(store.currentLevel)", "LEVEL \(store.currentLevel)"))
                             .font(TKFont.display(34))
                     }
                     .frame(height: 72)

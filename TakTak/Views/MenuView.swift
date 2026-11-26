@@ -29,7 +29,7 @@ struct MenuView: View {
                     .padding(.vertical, 8)
                     .background(Capsule().fill(Color.tkPanel))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(store.totalStars) yıldız")
+                    .accessibilityLabel(L("\(store.totalStars) yıldız", "\(store.totalStars) stars"))
                     Spacer()
                     Button {
                         Haptics.tap()
@@ -38,12 +38,12 @@ struct MenuView: View {
                         IconSquare(systemName: "trophy.fill")
                     }
                     .buttonStyle(PressableStyle())
-                    .accessibilityLabel("Sıralama")
+                    .accessibilityLabel(L("Sıralama", "Leaderboard"))
                     Button { showSettings = true } label: {
                         IconSquare(systemName: "slider.horizontal.3")
                     }
                     .buttonStyle(PressableStyle())
-                    .accessibilityLabel("Ayarlar")
+                    .accessibilityLabel(L("Ayarlar", "Settings"))
                 }
 
                 Spacer(minLength: 4)
@@ -57,7 +57,7 @@ struct MenuView: View {
                 .accessibilityLabel("Tak Tak")
                 .accessibilityAddTraits(.isHeader)
 
-                Text("Doğru anda vur. Çiviyi tek seferde göm.")
+                Text(L("Doğru anda vur. Çiviyi tek seferde göm.", "Hit at the right moment. Sink it in one blow."))
                     .font(TKFont.extraBold(16))
                     .foregroundStyle(Color.tkMuted)
                     .multilineTextAlignment(.center)
@@ -81,7 +81,7 @@ struct MenuView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 28, weight: .black))
-                        Text(store.allLevelsDone ? "SONSUZ MOD" : "SEVİYE \(store.currentLevel)")
+                        Text(store.allLevelsDone ? L("SONSUZ MOD", "ENDLESS") : L("SEVİYE \(store.currentLevel)", "LEVEL \(store.currentLevel)"))
                             .font(TKFont.display(40))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -94,12 +94,12 @@ struct MenuView: View {
                 Spacer(minLength: 12)
 
                 HStack(spacing: 12) {
-                    navButton("Harita", icon: "map.fill", dot: store.chestReady, action: onMap)
+                    navButton(L("Harita", "Map"), icon: "map.fill", dot: store.chestReady, action: onMap)
                     if store.endlessUnlocked && !store.allLevelsDone {
-                        navButton("Sonsuz", icon: "infinity", dot: false, action: onEndless)
+                        navButton(L("Sonsuz", "Endless"), icon: "infinity", dot: false, action: onEndless)
                     }
-                    navButton("Mağaza", icon: "bag.fill", dot: false, action: onShop)
-                    navButton("Ödül", icon: "gift.fill", dot: store.dailyState.canClaim, action: onDaily)
+                    navButton(L("Mağaza", "Shop"), icon: "bag.fill", dot: false, action: onShop)
+                    navButton(L("Ödül", "Reward"), icon: "gift.fill", dot: store.dailyState.canClaim, action: onDaily)
                 }
             }
             .padding(.horizontal, 24)
@@ -111,7 +111,7 @@ struct MenuView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environmentObject(store)
-                .presentationDetents([.height(400)])
+                .presentationDetents([.height(470)])
         }
         .sheet(isPresented: $showRecords) {
             RecordsView()
@@ -147,7 +147,7 @@ struct MenuView: View {
             }
         }
         .buttonStyle(PressableStyle())
-        .accessibilityLabel(dot ? "\(title), yeni" : title)
+        .accessibilityLabel(dot ? L("\(title), yeni", "\(title), new") : title)
     }
 }
 

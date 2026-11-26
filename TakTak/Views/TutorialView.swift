@@ -9,9 +9,9 @@ struct TutorialView: View {
     @State private var slide = false
 
     private let steps = [
-        ("Çiviler banttan gelir", "Bant sağdan sola akar, çiviler çekicin altından geçer."),
-        ("Oka gelince dokun!", "Çivi sarı okun tam üstüne geldiğinde ekranın herhangi bir yerine dokun."),
-        ("Tam ortası = MÜKEMMEL", "Ne kadar tam vurursan o kadar puan. Hiç vurmazsan çivi kaçar ve bir can gider.")
+        (L("Çiviler banttan gelir", "Nails ride the belt"), L("Bant sağdan sola akar, çiviler çekicin altından geçer.", "The belt runs right to left, carrying nails under the hammer.")),
+        (L("Oka gelince dokun!", "Tap at the arrow!"), L("Çivi sarı okun tam üstüne geldiğinde ekranın herhangi bir yerine dokun.", "When a nail is right over the yellow arrow, tap anywhere on the screen.")),
+        (L("Tam ortası = MÜKEMMEL", "Dead center = PERFECT"), L("Ne kadar tam vurursan o kadar puan. Hiç vurmazsan çivi kaçar ve bir can gider.", "The more precise the hit, the more points. Miss it and the nail escapes, costing a life."))
     ]
 
     var body: some View {
@@ -21,13 +21,13 @@ struct TutorialView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Text("NASIL OYNANIR?")
+                    Text(L("NASIL OYNANIR?", "HOW TO PLAY"))
                         .font(TKFont.black(13))
                         .tracking(2)
                         .foregroundStyle(Color.tkMuted)
                     Spacer()
                     if step < steps.count - 1 {
-                        Button("Geç", action: onDone)
+                        Button(L("Geç", "Skip"), action: onDone)
                             .font(TKFont.black(15))
                             .foregroundStyle(Color.tkMuted)
                             .frame(minWidth: 44, minHeight: 44)
@@ -64,7 +64,7 @@ struct TutorialView: View {
                         onDone()
                     }
                 } label: {
-                    Text(step < steps.count - 1 ? "İLERİ" : "BAŞLA!")
+                    Text(step < steps.count - 1 ? L("İLERİ", "NEXT") : L("BAŞLA!", "START!"))
                         .font(TKFont.display(32))
                         .frame(height: 68)
                 }
@@ -104,7 +104,7 @@ struct TutorialView: View {
                         .shadow(color: .black.opacity(0.4), radius: 6, y: 4)
                         .scaleEffect(pulse ? 0.88 : 1.05)
                         .offset(x: 50, y: -150)
-                    Text("DOKUN!")
+                    Text(L("DOKUN!", "TAP!"))
                         .font(TKFont.display(30))
                         .foregroundStyle(Color.tkYellow)
                         .shadow(color: .tkBrownShadow, radius: 0, x: 0, y: 3)
@@ -127,18 +127,18 @@ struct TutorialView: View {
     private var zoneDiagram: some View {
         VStack(spacing: 14) {
             HStack(spacing: 0) {
-                zone("EĞRİ", "+1", Color.tkPanelHi, width: 56)
-                zone("İYİ", "+2", Color(hex: 0x7A5A2A), width: 64)
-                zone("MÜKEMMEL", "+3 ×seri", Color.tkGreen, width: 100, dark: true)
-                zone("İYİ", "+2", Color(hex: 0x7A5A2A), width: 64)
-                zone("EĞRİ", "+1", Color.tkPanelHi, width: 56)
+                zone(L("EĞRİ", "BENT"), "+1", Color.tkPanelHi, width: 56)
+                zone(L("İYİ", "GOOD"), "+2", Color(hex: 0x7A5A2A), width: 64)
+                zone(L("MÜKEMMEL", "PERFECT"), L("+3 ×seri", "+3 ×streak"), Color.tkGreen, width: 100, dark: true)
+                zone(L("İYİ", "GOOD"), "+2", Color(hex: 0x7A5A2A), width: 64)
+                zone(L("EĞRİ", "BENT"), "+1", Color.tkPanelHi, width: 56)
             }
             .clipShape(RoundedRectangle(cornerRadius: 14))
             HStack(spacing: 8) {
                 Image(systemName: "heart.fill").foregroundStyle(Color.tkRed)
                 Image(systemName: "heart.fill").foregroundStyle(Color.tkRed)
                 Image(systemName: "heart.fill").foregroundStyle(Color.tkRed)
-                Text("3 can")
+                Text(L("3 can", "3 lives"))
                     .font(TKFont.black(15))
                     .foregroundStyle(Color.tkMuted)
             }

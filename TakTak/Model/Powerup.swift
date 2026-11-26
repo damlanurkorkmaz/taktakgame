@@ -9,27 +9,27 @@ enum Powerup: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .zone: return "Geniş bölge"
-        case .slow: return "Yavaş çekim"
-        case .life: return "+1 Can"
+        case .zone: return L("Geniş bölge", "Wide zone")
+        case .slow: return L("Yavaş çekim", "Slow-mo")
+        case .life: return L("+1 Can", "+1 Life")
         }
     }
 
     /// Oyun içinde kullanınca ne yaptığı
     var inGameText: String {
         switch self {
-        case .zone: return "8 sn vuruş bölgesi geniş"
-        case .slow: return "5 sn bant yarı hızda"
-        case .life: return "Bir can ekler"
+        case .zone: return L("8 sn vuruş bölgesi geniş", "Wider hit zone for 8s")
+        case .slow: return L("5 sn bant yarı hızda", "Belt at half speed for 5s")
+        case .life: return L("Bir can ekler", "Adds one life")
         }
     }
 
     /// Seviyeden önce seçilince ne yaptığı
     var preLevelText: String {
         switch self {
-        case .zone: return "İlk 10 sn"
-        case .slow: return "5 sn, istediğin an"
-        case .life: return "4 canla başla"
+        case .zone: return L("İlk 10 sn", "First 10s")
+        case .slow: return L("5 sn, istediğin an", "5s, whenever you want")
+        case .life: return L("4 canla başla", "Start with 4 lives")
         }
     }
 

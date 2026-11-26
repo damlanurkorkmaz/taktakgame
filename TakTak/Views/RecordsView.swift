@@ -8,14 +8,14 @@ struct RecordsView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("REKORLARIN")
+            Text(L("REKORLARIN", "YOUR RECORDS"))
                 .font(TKFont.display(32))
                 .displayTrim(32)
                 .padding(.top, 8)
                 .accessibilityAddTraits(.isHeader)
 
             VStack(spacing: 4) {
-                Text("SONSUZ MOD REKORU")
+                Text(L("SONSUZ MOD REKORU", "ENDLESS BEST"))
                     .font(TKFont.black(12))
                     .tracking(1.5)
                     .foregroundStyle(Color.tkMuted)
@@ -31,9 +31,9 @@ struct RecordsView: View {
             .accessibilityElement(children: .combine)
 
             HStack(spacing: 10) {
-                stat(value: "\(store.levelStars.count)", label: "seviye geçildi")
-                stat(value: "\(store.totalStars)", label: "yıldız")
-                stat(value: "\(store.levelStars.values.filter { $0 >= 3 }.count)", label: "3 yıldız")
+                stat(value: "\(store.levelStars.count)", label: L("seviye geçildi", "levels cleared"))
+                stat(value: "\(store.totalStars)", label: L("yıldız", "stars"))
+                stat(value: "\(store.levelStars.values.filter { $0 >= 3 }.count)", label: L("3 yıldız", "3 stars"))
             }
 
             gameCenterSection
@@ -68,25 +68,25 @@ struct RecordsView: View {
     private var gameCenterSection: some View {
         switch gc.status {
         case .signedIn(let name):
-            gcButton(title: "Dünya sıralamasını gör", icon: "globe.europe.africa.fill") {
+            gcButton(title: L("Dünya sıralamasını gör", "View world leaderboard"), icon: "globe.europe.africa.fill") {
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     GameCenterManager.shared.showLeaderboard()
                 }
             }
-            note("\(name) olarak Game Center'dasın. Rekorların otomatik gönderilir.")
+            note(L("\(name) olarak Game Center'dasın. Rekorların otomatik gönderilir.", "Signed in to Game Center as \(name). Your records are sent automatically."))
         case .needsLogin:
-            gcButton(title: "Game Center'a giriş yap", icon: "person.crop.circle.badge.plus") {
+            gcButton(title: L("Game Center'a giriş yap", "Sign in to Game Center"), icon: "person.crop.circle.badge.plus") {
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     GameCenterManager.shared.presentLogin()
                 }
             }
-            note("Giriş yaparsan rekorların dünya sıralamasına girer.")
+            note(L("Giriş yaparsan rekorların dünya sıralamasına girer.", "Sign in to put your records on the world leaderboard."))
         case .unavailable(let message):
             note(message)
         case .unknown:
-            note("Game Center'a bağlanılıyor…")
+            note(L("Game Center'a bağlanılıyor…", "Connecting to Game Center…"))
         }
     }
 

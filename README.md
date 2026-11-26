@@ -123,3 +123,17 @@ App Store Connect'te ayrıca şunlar gerekir:
 ## Lisanslar
 
 Fontlar SIL Open Font License 1.1 ile dağıtılır, ayrıntılar `Licenses/` klasöründe.
+
+## Destek ve gizlilik sayfaları
+
+`docs/` klasörü GitHub Pages ile yayınlanır (Settings > Pages > Branch: `main`, klasör: `/docs`).
+
+- Destek: https://damlanurkorkmaz.github.io/taktakgame/support.html
+- Gizlilik: https://damlanurkorkmaz.github.io/taktakgame/privacy.html
+
+Sayfalar Türkçe ve İngilizcedir; `?lang=tr` / `?lang=en` ile dil seçilebilir.
+
+## Dil desteği
+
+Uygulama Türkçe ve İngilizcedir. Metinler kodda `L("Türkçe", "English")` ile yazılır
+(`TakTak/Model/Lang.swift`). Cihaz dili Türkçe ise Türkçe, değilse İngilizce açılır.

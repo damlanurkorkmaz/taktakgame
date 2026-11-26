@@ -83,7 +83,7 @@ struct GameView: View {
 
             if let r = failResult {
                 GameOverView(
-                    title: scene.level == nil ? nil : "SEVİYE BAŞARISIZ",
+                    title: scene.level == nil ? nil : L("SEVİYE BAŞARISIZ", "LEVEL FAILED"),
                     score: r.score,
                     best: store.best,
                     showBest: scene.level == nil,
@@ -92,7 +92,7 @@ struct GameView: View {
                     canContinue: !scene.hasContinued,
                     escaped: scene.lastLoss == .escaped,
                     lossTitle: lossTitle,
-                    menuTitle: scene.level == nil ? "Ana menü" : "Harita",
+                    menuTitle: scene.level == nil ? L("Ana menü", "Main menu") : L("Harita", "Map"),
                     continueWithAd: !store.noAds,
                     hammer: store.equipped,
                     onContinue: continueRun,
@@ -133,10 +133,10 @@ struct GameView: View {
             }
             scene.onPowerupCollected = { p in store.addPowerup(p) }
         }
-        .alert("Reklam hazır değil", isPresented: $adNotReady) {
-            Button("Tamam", role: .cancel) {}
+        .alert(L("Reklam hazır değil", "Ad not ready"), isPresented: $adNotReady) {
+            Button(L("Tamam", "OK"), role: .cancel) {}
         } message: {
-            Text("Birkaç saniye sonra tekrar dene.")
+            Text(L("Birkaç saniye sonra tekrar dene.", "Try again in a few seconds."))
         }
         .onChange(of: scene.isOver) { _, over in
             guard over else { return }
@@ -179,8 +179,8 @@ struct GameView: View {
     private var lossTitle: String? {
         switch scene.lastLoss {
         case .escaped: return nil
-        case .red: return "KIRMIZI ÇİVİ!"
-        case .bomb: return "BOMBA PATLADI!"
+        case .red: return L("KIRMIZI ÇİVİ!", "RED NAIL!")
+        case .bomb: return L("BOMBA PATLADI!", "BOMB WENT OFF!")
         }
     }
 
@@ -242,7 +242,7 @@ struct GameView: View {
                         .font(TKFont.black(12))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                    Text(active ? "AKTİF" : "\(count) adet")
+                    Text(active ? L("AKTİF", "ACTIVE") : L("\(count) adet", "×\(count)"))
                         .font(TKFont.black(11))
                         .foregroundStyle(active ? p.color : (count > 0 ? Color.tkYellow : Color.tkMuted))
                 }
@@ -269,7 +269,7 @@ struct GameView: View {
             .opacity(count > 0 || active ? 1 : 0.55)
         }
         .buttonStyle(PressableStyle())
-        .accessibilityLabel("\(p.title), \(active ? "aktif" : "\(count) adet")")
+        .accessibilityLabel("\(p.title), \(active ? L("aktif", "active") : L("\(count) adet", "×\(count)"))")
     }
 
     // MARK: - Görev bildirimi
@@ -302,7 +302,7 @@ struct GameView: View {
                     IconSquare(systemName: "pause.fill")
                 }
                 .buttonStyle(PressableStyle())
-                .accessibilityLabel("Duraklat")
+                .accessibilityLabel(L("Duraklat", "Pause"))
                 .disabled(failResult != nil || levelResult != nil)
 
                 Spacer()
@@ -317,7 +317,7 @@ struct GameView: View {
                 }
                 .animation(.spring(duration: 0.3), value: scene.lives)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(scene.lives) can")
+                .accessibilityLabel(L("\(scene.lives) can", "\(scene.lives) lives"))
                 .allowsHitTesting(false)
 
                 Spacer()
@@ -342,7 +342,7 @@ struct GameView: View {
                     .contentTransition(.numericText())
                     .animation(.snappy(duration: 0.15), value: scene.score)
                 if scene.level == nil {
-                    Text("EN İYİ \(store.best)")
+                    Text(L("EN İYİ \(store.best)", "BEST \(store.best)"))
                         .font(TKFont.extraBold(14))
                         .tracking(1)
                         .foregroundStyle(Color.tkMuted)
@@ -350,7 +350,7 @@ struct GameView: View {
                 if scene.multiplier > 1 {
                     HStack(spacing: 6) {
                         Image(systemName: "flame.fill")
-                        Text("x\(scene.multiplier) SERİ")
+                        Text(L("x\(scene.multiplier) SERİ", "x\(scene.multiplier) STREAK"))
                     }
                     .font(TKFont.black(16))
                     .foregroundStyle(Color.tkBg)
@@ -377,7 +377,7 @@ struct GameView: View {
         let fraction = goal > 0 ? CGFloat(scene.progress) / CGFloat(goal) : 0
         return VStack(spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(level.isBoss ? "PATRON · SEVİYE \(level.number)" : "SEVİYE \(level.number)")
+                Text(level.isBoss ? L("PATRON · SEVİYE \(level.number)", "BOSS · LEVEL \(level.number)") : L("SEVİYE \(level.number)", "LEVEL \(level.number)"))
                     .font(TKFont.black(14))
                     .tracking(1)
                     .foregroundStyle(level.isBoss ? Color.tkRed : Color.tkMuted)
@@ -399,7 +399,7 @@ struct GameView: View {
             .frame(height: 16)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Seviye \(level.number), \(scene.progress) / \(goal) \(level.goal.unit)")
+        .accessibilityLabel(L("Seviye \(level.number), \(scene.progress) / \(goal) \(level.goal.unit)", "Level \(level.number), \(scene.progress) / \(goal) \(level.goal.unit)"))
     }
 
     // MARK: - Duraklatma
@@ -409,7 +409,7 @@ struct GameView: View {
             Color.tkDarkest.opacity(0.85)
                 .ignoresSafeArea()
             VStack(spacing: 16) {
-                DisplayTitle(text: "DURAKLADI", size: 48)
+                DisplayTitle(text: L("DURAKLADI", "PAUSED"), size: 48)
                     .padding(.bottom, 12)
                 Button {
                     withAnimation(.easeOut(duration: 0.15)) { paused = false }
@@ -418,7 +418,7 @@ struct GameView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 26, weight: .black))
-                        Text("DEVAM")
+                        Text(L("DEVAM", "RESUME"))
                             .font(TKFont.display(36))
                     }
                     .frame(height: 72)
@@ -434,7 +434,7 @@ struct GameView: View {
                     scene.consumeRunCoins()
                     onExit()
                 } label: {
-                    Label(scene.level == nil ? "Ana menü" : "Haritaya dön", systemImage: scene.level == nil ? "house.fill" : "map.fill")
+                    Label(scene.level == nil ? L("Ana menü", "Main menu") : L("Haritaya dön", "Back to map"), systemImage: scene.level == nil ? "house.fill" : "map.fill")
                         .font(TKFont.black(17))
                         .foregroundStyle(Color.tkCream)
                         .frame(maxWidth: .infinity)

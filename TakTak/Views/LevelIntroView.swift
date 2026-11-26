@@ -26,16 +26,16 @@ struct LevelIntroView: View {
                 }
                 .padding(.bottom, -18)
 
-                Text("BÖLÜM 1 · \(Level.chapterTitle)")
+                Text(L("BÖLÜM 1 · \(Level.chapterTitle)", "CHAPTER 1 · \(Level.chapterTitle)"))
                     .font(TKFont.extraBold(13))
                     .tracking(2)
                     .foregroundStyle(Color.tkMuted)
-                DisplayTitle(text: "SEVİYE \(level.number)", size: 46, depth: 5)
+                DisplayTitle(text: L("SEVİYE \(level.number)", "LEVEL \(level.number)"), size: 46, depth: 5)
 
                 if level.isBoss {
                     HStack(spacing: 6) {
                         Image(systemName: "crown.fill")
-                        Text("PATRON SEVİYESİ")
+                        Text(L("PATRON SEVİYESİ", "BOSS LEVEL"))
                     }
                     .font(TKFont.black(13))
                     .tracking(1)
@@ -51,7 +51,7 @@ struct LevelIntroView: View {
                         .frame(width: 64, height: 64)
                         .background(RoundedRectangle(cornerRadius: 18).fill(Color.tkBg))
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("HEDEF")
+                        Text(L("HEDEF", "GOAL"))
                             .font(TKFont.extraBold(13))
                             .tracking(1)
                             .foregroundStyle(Color.tkMuted)
@@ -68,9 +68,9 @@ struct LevelIntroView: View {
                 .accessibilityElement(children: .combine)
 
                 VStack(spacing: 8) {
-                    starRow(1, "Seviyeyi bitir")
-                    starRow(2, "%\(Int(Level.twoStarAccuracy * 100)) isabetle bitir")
-                    starRow(3, "%\(Int(Level.threeStarAccuracy * 100)) isabet ya da \(Level.threeStarStreak)'luk seri")
+                    starRow(1, L("Seviyeyi bitir", "Finish the level"))
+                    starRow(2, L("%\(Int(Level.twoStarAccuracy * 100)) isabetle bitir", "Finish with \(Int(Level.twoStarAccuracy * 100))% accuracy"))
+                    starRow(3, L("%\(Int(Level.threeStarAccuracy * 100)) isabet ya da \(Level.threeStarStreak)'luk seri", "\(Int(Level.threeStarAccuracy * 100))% accuracy or a \(Level.threeStarStreak) streak"))
                 }
                 .padding(.top, 12)
 
@@ -79,7 +79,7 @@ struct LevelIntroView: View {
                         Image(uiImage: NailArt.image(.up, feature.tint, size: 58))
                             .frame(width: 44, height: 58)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("YENİ")
+                            Text(L("YENİ", "NEW"))
                                 .font(TKFont.black(11))
                                 .tracking(1)
                                 .foregroundStyle(Color.tkBg)
@@ -108,7 +108,7 @@ struct LevelIntroView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 26, weight: .black))
-                        Text("BAŞLA")
+                        Text(L("BAŞLA", "START"))
                             .font(TKFont.display(34))
                         if cost > 0 {
                             HStack(spacing: 5) {
@@ -145,11 +145,11 @@ struct LevelIntroView: View {
     private var boosterPicker: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("GÜÇLENDİRİCİ SEÇ")
+                Text(L("GÜÇLENDİRİCİ SEÇ", "PICK POWER-UPS"))
                     .font(TKFont.black(13))
                     .tracking(1)
                 Spacer()
-                Text("\(GameScene.maxLives + (selected.contains(.life) ? 1 : 0)) can")
+                Text(L("\(GameScene.maxLives + (selected.contains(.life) ? 1 : 0)) can", "\(GameScene.maxLives + (selected.contains(.life) ? 1 : 0)) lives"))
                     .font(TKFont.extraBold(13))
                     .foregroundStyle(Color.tkMuted)
             }
@@ -184,7 +184,7 @@ struct LevelIntroView: View {
                     Text(p.title)
                         .font(TKFont.black(14))
                         .foregroundStyle(Color.tkCream)
-                    Text(owned > 0 ? "\(owned) adet" : "\(p.price) para")
+                    Text(owned > 0 ? L("\(owned) adet", "×\(owned)") : L("\(p.price) para", "\(p.price) coins"))
                         .font(TKFont.black(12))
                         .foregroundStyle(owned > 0 ? Color.tkGreen : (affordable || isOn ? Color.tkYellow : Color.tkRed))
                 }
@@ -234,7 +234,7 @@ struct LevelIntroView: View {
         .frame(height: 44)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x33271F)))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(count) yıldız: \(text)")
+        .accessibilityLabel(L("\(count) yıldız: \(text)", "\(count) stars: \(text)"))
     }
 }
 
@@ -282,7 +282,7 @@ struct FeatureIntroView: View {
                 }
 
                 Button(action: onDone) {
-                    Text("ANLADIM")
+                    Text(L("ANLADIM", "GOT IT"))
                         .font(TKFont.display(34))
                         .frame(height: 68)
                 }
@@ -338,7 +338,7 @@ struct FeatureIntroView: View {
             HStack(spacing: 6) {
                 Image(systemName: ok ? "checkmark" : "xmark")
                     .font(.system(size: 16, weight: .black))
-                Text(ok ? "VUR" : "VURMA")
+                Text(ok ? L("VUR", "HIT") : L("VURMA", "DON'T HIT"))
                     .font(TKFont.black(16))
             }
             .foregroundStyle(ok ? Color.tkGreen : Color.tkRed)
@@ -358,5 +358,5 @@ func closeButton(_ action: @escaping () -> Void) -> some View {
             .foregroundStyle(Color.tkMuted)
             .frame(width: 44, height: 44)
     }
-    .accessibilityLabel("Kapat")
+    .accessibilityLabel(L("Kapat", "Close"))
 }

@@ -29,7 +29,7 @@ struct CoinPill: View {
         .padding(.vertical, 8)
         .background(Capsule().fill(Color.tkPanel))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(text) para")
+        .accessibilityLabel(L("\(text) para", "\(text) coins"))
     }
 }
 

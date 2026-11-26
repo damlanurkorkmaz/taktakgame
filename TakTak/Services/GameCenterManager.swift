@@ -44,7 +44,7 @@ final class GameCenterManager: NSObject, ObservableObject, GKGameCenterControlle
                 } else if let error {
                     self.status = .unavailable(Self.describe(error))
                 } else {
-                    self.status = .unavailable("Game Center'a giriş yapılmadı.")
+                    self.status = .unavailable(L("Game Center'a giriş yapılmadı.", "Not signed in to Game Center."))
                 }
             }
         }
@@ -86,13 +86,13 @@ final class GameCenterManager: NSObject, ObservableObject, GKGameCenterControlle
         let code = (error as NSError).code
         switch GKError.Code(rawValue: code) {
         case .notAuthenticated, .cancelled, .userDenied:
-            return "Game Center'a giriş yapılmadı. iPhone Ayarlar > Game Center'dan giriş yapabilirsin."
+            return L("Game Center'a giriş yapılmadı. iPhone Ayarlar > Game Center'dan giriş yapabilirsin.", "Not signed in to Game Center. You can sign in from iPhone Settings > Game Center.")
         case .gameUnrecognized, .notSupported:
-            return "Bu sürümde Game Center henüz etkin değil."
+            return L("Bu sürümde Game Center henüz etkin değil.", "Game Center isn't enabled for this version yet.")
         case .communicationsFailure, .connectionTimeout:
-            return "Game Center'a bağlanılamadı. İnterneti kontrol et."
+            return L("Game Center'a bağlanılamadı. İnterneti kontrol et.", "Couldn't reach Game Center. Check your connection.")
         default:
-            return "Game Center şu an kullanılamıyor."
+            return L("Game Center şu an kullanılamıyor.", "Game Center is unavailable right now.")
         }
     }
 }

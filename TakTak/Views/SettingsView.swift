@@ -11,19 +11,19 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("AYARLAR")
+            Text(L("AYARLAR", "SETTINGS"))
                 .font(TKFont.display(32))
                 .padding(.top, 8)
 
-            toggleRow("Ses", icon: "speaker.wave.2.fill", isOn: $store.soundOn)
-            toggleRow("Müzik", icon: "music.note", isOn: $store.musicOn)
-            toggleRow("Titreşim", icon: "iphone.radiowaves.left.and.right", isOn: $store.hapticsOn)
+            toggleRow(L("Ses", "Sound"), icon: "speaker.wave.2.fill", isOn: $store.soundOn)
+            toggleRow(L("Müzik", "Music"), icon: "music.note", isOn: $store.musicOn)
+            toggleRow(L("Titreşim", "Haptics"), icon: "iphone.radiowaves.left.and.right", isOn: $store.hapticsOn)
 
             Button {
                 Task { await StoreManager.shared.restore() }
                 Haptics.tap()
             } label: {
-                Label("Satın alımları geri yükle", systemImage: "arrow.clockwise")
+                Label(L("Satın alımları geri yükle", "Restore purchases"), systemImage: "arrow.clockwise")
                     .font(TKFont.black(15))
                     .foregroundStyle(Color.tkMuted)
                     .frame(maxWidth: .infinity)
@@ -31,9 +31,14 @@ struct SettingsView: View {
             }
             .buttonStyle(PressableStyle())
 
+            HStack(spacing: 10) {
+                linkButton(L("Destek", "Support"), icon: "questionmark.circle.fill", url: AppLinks.support)
+                linkButton(L("Gizlilik", "Privacy"), icon: "hand.raised.fill", url: AppLinks.privacy)
+            }
+
             Spacer(minLength: 0)
 
-            Text("Tak Tak! · Sürüm \(version)")
+            Text(L("Tak Tak! · Sürüm \(version)", "Tak Tak! · Version \(version)"))
                 .font(TKFont.extraBold(13))
                 .foregroundStyle(Color.tkMuted)
         }
@@ -41,6 +46,18 @@ struct SettingsView: View {
         .foregroundStyle(Color.tkCream)
         .presentationBackground(Color.tkBg)
         .presentationDragIndicator(.visible)
+    }
+
+    private func linkButton(_ title: String, icon: String, url: URL) -> some View {
+        Link(destination: url) {
+            Label(title, systemImage: icon)
+                .font(TKFont.black(15))
+                .foregroundStyle(Color.tkCream)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Color.tkPanel))
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private func toggleRow(_ title: String, icon: String, isOn: Binding<Bool>) -> some View {

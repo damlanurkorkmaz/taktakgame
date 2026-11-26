@@ -25,15 +25,15 @@ struct DailyRewardView: View {
                             .foregroundStyle(Color.tkMuted)
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel("Kapat")
+                    .accessibilityLabel(L("Kapat", "Close"))
                 }
                 .padding(.bottom, -16)
 
-                DisplayTitle(text: "GÜNLÜK ÖDÜL", size: 40, depth: 4)
+                DisplayTitle(text: L("GÜNLÜK ÖDÜL", "DAILY REWARD"), size: 40, depth: 4)
 
                 HStack(spacing: 6) {
                     Image(systemName: "flame.fill")
-                    Text("Seri: \(state.day). gün")
+                    Text(L("Seri: \(state.day). gün", "Streak: day \(state.day)"))
                 }
                 .font(TKFont.black(15))
                 .foregroundStyle(Color.tkBg)
@@ -60,7 +60,7 @@ struct DailyRewardView: View {
                     Haptics.success()
                     SoundFX.shared.play(.coin)
                 } label: {
-                    Text(state.canClaim ? "AL" : "ALINDI")
+                    Text(state.canClaim ? L("AL", "CLAIM") : L("ALINDI", "CLAIMED"))
                         .font(TKFont.display(36))
                         .frame(height: 68)
                 }
@@ -89,8 +89,8 @@ struct DailyRewardView: View {
     }
 
     private var footer: String {
-        if let bonus { return "Sürpriz: \(bonus.title) artık senin!" }
-        return "Yarın tekrar gel, seri bozulmasın!"
+        if let bonus { return L("Sürpriz: \(bonus.title) artık senin!", "Surprise: \(bonus.title) is yours!") }
+        return L("Yarın tekrar gel, seri bozulmasın!", "Come back tomorrow to keep your streak!")
     }
 
     @ViewBuilder
@@ -99,7 +99,7 @@ struct DailyRewardView: View {
         let today = n == state.day
 
         VStack(spacing: 6) {
-            Text("\(n). gün")
+            Text(L("\(n). gün", "Day \(n)"))
                 .font(TKFont.extraBold(13))
                 .foregroundStyle(Color.tkMuted)
             if done {
@@ -107,7 +107,7 @@ struct DailyRewardView: View {
                     .font(.system(size: 24, weight: .black))
                     .foregroundStyle(Color.tkGreen)
                     .frame(height: 28)
-                    .accessibilityLabel("Alındı")
+                    .accessibilityLabel(L("Alındı", "Claimed"))
             } else {
                 CoinIcon(size: 28)
             }
@@ -132,10 +132,10 @@ struct DailyRewardView: View {
                 .foregroundStyle(done ? Color.tkGreen : Color(hex: 0xD99350))
                 .frame(width: 52)
             VStack(alignment: .leading, spacing: 2) {
-                Text("7. GÜN")
+                Text(L("7. GÜN", "DAY 7"))
                     .font(TKFont.extraBold(13))
                     .foregroundStyle(Color.tkMuted)
-                Text("\(GameStore.dailyRewards[6]) + sürpriz çekiç")
+                Text(L("\(GameStore.dailyRewards[6]) + sürpriz çekiç", "\(GameStore.dailyRewards[6]) + surprise hammer"))
                     .font(TKFont.black(17))
             }
             Spacer()

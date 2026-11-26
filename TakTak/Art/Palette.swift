@@ -80,7 +80,7 @@ extension Int {
     private static let formatter: NumberFormatter = {
         let f = NumberFormatter()
         f.numberStyle = .decimal
-        f.locale = Locale(identifier: "tr_TR")
+        f.locale = Locale(identifier: Lang.localeID)
         return f
     }()
 }

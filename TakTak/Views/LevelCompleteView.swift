@@ -19,20 +19,20 @@ struct LevelCompleteView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("SEVİYE \(level.number)")
+            Text(L("SEVİYE \(level.number)", "LEVEL \(level.number)"))
                 .font(TKFont.black(14))
                 .tracking(2)
                 .foregroundStyle(Color.tkMuted)
                 .padding(.top, 24)
-            DisplayTitle(text: level.isBoss ? "PATRON YENİLDİ!" : "TAMAMLANDI!", size: 44, depth: 5)
+            DisplayTitle(text: level.isBoss ? L("PATRON YENİLDİ!", "BOSS DEFEATED!") : L("TAMAMLANDI!", "COMPLETE!"), size: 44, depth: 5)
 
             starsRow
                 .padding(.top, 16)
 
             HStack(spacing: 10) {
-                stat("İSABET", "%\(Int((accuracy * 100).rounded()))")
-                stat("MÜKEMMEL", "\(perfects)")
-                stat("EN UZUN SERİ", "\(bestStreak)")
+                stat(L("İSABET", "ACCURACY"), L("%\(Int((accuracy * 100).rounded()))", "\(Int((accuracy * 100).rounded()))%"))
+                stat(L("MÜKEMMEL", "PERFECT"), "\(perfects)")
+                stat(L("EN UZUN SERİ", "BEST STREAK"), "\(bestStreak)")
             }
             .padding(.top, 14)
 
@@ -44,7 +44,7 @@ struct LevelCompleteView: View {
             if level.number < Level.count {
                 Button(action: onNext) {
                     HStack(spacing: 12) {
-                        Text("SONRAKİ SEVİYE")
+                        Text(L("SONRAKİ SEVİYE", "NEXT LEVEL"))
                             .font(TKFont.display(30))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 24, weight: .black))
@@ -54,7 +54,7 @@ struct LevelCompleteView: View {
                 .buttonStyle(ChunkyButtonStyle())
             } else {
                 Button(action: onEndless) {
-                    Text("BÖLÜM BİTTİ!")
+                    Text(L("BÖLÜM BİTTİ!", "CHAPTER DONE!"))
                         .font(TKFont.display(30))
                         .frame(height: 76)
                 }
@@ -64,7 +64,7 @@ struct LevelCompleteView: View {
             HStack(spacing: 12) {
                 if stars < 3 {
                     Button(action: onReplay) {
-                        Label("3 yıldız için tekrar", systemImage: "arrow.clockwise")
+                        Label(L("3 yıldız için tekrar", "Retry for 3 stars"), systemImage: "arrow.clockwise")
                             .font(TKFont.black(15))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -76,7 +76,7 @@ struct LevelCompleteView: View {
                     .buttonStyle(PressableStyle())
                 }
                 Button(action: onMap) {
-                    Label("Harita", systemImage: "map.fill")
+                    Label(L("Harita", "Map"), systemImage: "map.fill")
                         .font(TKFont.black(15))
                         .frame(maxWidth: stars < 3 ? 130 : .infinity)
                         .frame(height: 54)
@@ -104,7 +104,7 @@ struct LevelCompleteView: View {
         }
         .frame(height: 124)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(stars) yıldız")
+        .accessibilityLabel(L("\(stars) yıldız", "\(stars) stars"))
     }
 
     private func bigStar(index: Int, size: CGFloat) -> some View {
@@ -155,7 +155,7 @@ struct LevelCompleteView: View {
     private var rewards: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Ödüller")
+                Text(L("Ödüller", "Rewards"))
                     .font(TKFont.black(15))
                 Spacer()
                 HStack(spacing: 14) {
@@ -175,8 +175,8 @@ struct LevelCompleteView: View {
                     .scaleEffect(0.85)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(store.chestReady
-                         ? "Sandık hazır! Haritadan aç."
-                         : "Sandığa \(GameStore.chestCost - store.chestProgress) yıldız kaldı")
+                         ? L("Sandık hazır! Haritadan aç.", "Chest ready! Open it on the map.")
+                         : L("Sandığa \(GameStore.chestCost - store.chestProgress) yıldız kaldı", "\(GameStore.chestCost - store.chestProgress) stars to the chest"))
                         .font(TKFont.black(14))
                         .foregroundStyle(store.chestReady ? Color.tkGreen : Color.tkCream)
                     ProgressBar(fraction: Double(store.chestProgress) / Double(GameStore.chestCost),

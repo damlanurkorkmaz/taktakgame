@@ -343,7 +343,7 @@ final class GameStore: ObservableObject {
         let next = cal.startOfDay(for: now).addingTimeInterval(24 * 3600)
         let mins = max(0, Int(next.timeIntervalSince(now) / 60))
         let h = mins / 60, m = mins % 60
-        return h > 0 ? "\(h) sa \(m) dk" : "\(m) dk"
+        return h > 0 ? L("\(h) sa \(m) dk", "\(h)h \(m)m") : L("\(m) dk", "\(m)m")
     }
 
     // MARK: - Güçlendiriciler

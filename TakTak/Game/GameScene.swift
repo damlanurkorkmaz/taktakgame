@@ -41,7 +41,7 @@ final class GameScene: SKScene, ObservableObject {
 
     /// Seviye modunda oynanan seviye; sonsuz modda nil.
     let level: Level?
-    /// İlk açılış eğitimi: bant yavaş, "ŞİMDİ DOKUN!" yardımı açık
+    /// İlk açılış eğitimi: bant yavaş, L("ŞİMDİ DOKUN!", "TAP NOW!") yardımı açık
     let tutorial: Bool
 
     /// Görev sistemi için olaylar (mükemmel vuruş, gömülen çivi, seri).
@@ -266,7 +266,7 @@ final class GameScene: SKScene, ObservableObject {
         hammer = h
 
         let hint = SKLabelNode(fontNamed: TKFont.extraBoldName)
-        hint.text = "Çivi sarı okun üstüne gelince dokun"
+        hint.text = L("Çivi sarı okun üstüne gelince dokun", "Tap when the nail is over the yellow arrow")
         hint.fontSize = 15
         hint.fontColor = Palette.muted
         hint.verticalAlignmentMode = .center
@@ -275,18 +275,18 @@ final class GameScene: SKScene, ObservableObject {
         addChild(hint)
         hintLabel = hint
 
-        // Eğitim yardımı: çivi tam yerindeyken yanıp sönen "ŞİMDİ DOKUN!"
+        // Eğitim yardımı: çivi tam yerindeyken yanıp sönen L("ŞİMDİ DOKUN!", "TAP NOW!")
         let assist = SKNode()
         assist.position = CGPoint(x: hammerX, y: surfaceY + 150)
         assist.zPosition = 40
         assist.alpha = 0
         let assistLabel = SKLabelNode(fontNamed: TKFont.displayName)
-        assistLabel.text = "ŞİMDİ DOKUN!"
+        assistLabel.text = L("ŞİMDİ DOKUN!", "TAP NOW!")
         assistLabel.fontSize = 34
         assistLabel.fontColor = Palette.yellow
         assistLabel.verticalAlignmentMode = .center
         let assistShadow = SKLabelNode(fontNamed: TKFont.displayName)
-        assistShadow.text = "ŞİMDİ DOKUN!"
+        assistShadow.text = L("ŞİMDİ DOKUN!", "TAP NOW!")
         assistShadow.fontSize = 34
         assistShadow.fontColor = Palette.brownShadow
         assistShadow.verticalAlignmentMode = .center
@@ -344,13 +344,13 @@ final class GameScene: SKScene, ObservableObject {
         case .life:
             guard lives < GameScene.lifeCap else { return false }
             lives += 1
-            popup("+1 CAN", color: Palette.red, size: 32, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: Palette.redShadow)
+            popup(L("+1 CAN", "+1 LIFE"), color: Palette.red, size: 32, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: Palette.redShadow)
         case .zone:
             zoneTime = max(zoneTime, p.duration)
-            popup("GENİŞ BÖLGE!", color: Palette.green, size: 30, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: Palette.greenShadow)
+            popup(L("GENİŞ BÖLGE!", "WIDE ZONE!"), color: Palette.green, size: 30, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: Palette.greenShadow)
         case .slow:
             slowTime = max(slowTime, p.duration)
-            popup("YAVAŞ ÇEKİM!", color: p.uiColor, size: 30, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: nil)
+            popup(L("YAVAŞ ÇEKİM!", "SLOW-MO!"), color: p.uiColor, size: 30, at: CGPoint(x: 195, y: surfaceY + 190), rotation: 0, shadowColor: nil)
         }
         Haptics.success()
         SoundFX.shared.play(.coin)
@@ -577,14 +577,14 @@ final class GameScene: SKScene, ObservableObject {
             if nail.kind == .red {
                 // Kırmızıyı bırakmak doğru hamle
                 if nail.depth == 0 {
-                    popup("GÜZEL!", color: Palette.green, size: 24, at: CGPoint(x: 90, y: surfaceY + 152), shadowColor: nil)
+                    popup(L("GÜZEL!", "NICE!"), color: Palette.green, size: 24, at: CGPoint(x: 90, y: surfaceY + 152), shadowColor: nil)
                 }
                 continue
             }
             // Vurulmuş ama yarım kalmış çivi cezasız geçer; hiç vurulmamış çivi kaçar.
             guard nail.depth == 0 else { continue }
             escapes += 1
-            popup("KAÇTI!", color: Palette.red, size: 34, at: CGPoint(x: 90, y: surfaceY + 160), shadowColor: Palette.redShadow)
+            popup(L("KAÇTI!", "MISSED!"), color: Palette.red, size: 34, at: CGPoint(x: 90, y: surfaceY + 160), shadowColor: Palette.redShadow)
             loseLife(.escaped)
             if lives <= 0 { break }
         }
@@ -689,7 +689,7 @@ final class GameScene: SKScene, ObservableObject {
         score += points
         beltSpeed = min(maxSpeed, beltSpeed + Tuning.perfectBoost)
 
-        popup("MÜKEMMEL!", color: Palette.yellow, size: 46, at: CGPoint(x: 140, y: surfaceY + 170))
+        popup(L("MÜKEMMEL!", "PERFECT!"), color: Palette.yellow, size: 46, at: CGPoint(x: 140, y: surfaceY + 170))
         popup("+\(points)", color: Palette.green, size: 26, at: CGPoint(x: 140, y: surfaceY + 126), rotation: -0.1, shadowColor: nil)
         shake(amount: 8)
         Haptics.perfect()
@@ -716,7 +716,7 @@ final class GameScene: SKScene, ObservableObject {
         if nail.kind == .plate {
             // Metal levha: yalnızca mükemmel vuruş işe yarar
             woodHits += 1
-            popup("SEKTİ!", color: Palette.muted, size: 34, at: CGPoint(x: 130, y: surfaceY + 160))
+            popup(L("SEKTİ!", "BOUNCED!"), color: Palette.muted, size: 34, at: CGPoint(x: 130, y: surfaceY + 160))
             sparks(at: CGPoint(x: hammerX, y: surfaceY + 66), count: 6, color: Palette.cream)
             shake(amount: 3)
             Haptics.tap()
@@ -726,7 +726,7 @@ final class GameScene: SKScene, ObservableObject {
         goods += 1
         score += Tuning.goodPoints
         beltSpeed = min(maxSpeed, beltSpeed + Tuning.goodBoost)
-        popup("İYİ", color: Palette.cream, size: 38, at: CGPoint(x: 130, y: surfaceY + 160))
+        popup(L("İYİ", "GOOD"), color: Palette.cream, size: 38, at: CGPoint(x: 130, y: surfaceY + 160))
         popup("+\(Tuning.goodPoints)", color: Palette.green, size: 24, at: CGPoint(x: 130, y: surfaceY + 122), rotation: -0.1, shadowColor: nil)
         shake(amount: 4)
         Haptics.good()
@@ -754,18 +754,18 @@ final class GameScene: SKScene, ObservableObject {
         switch nail.kind {
         case .gold:
             runCoins += Tuning.goldCoins
-            popup("+\(Tuning.goldCoins + 1) PARA", color: Palette.yellow, size: 22,
+            popup(L("+\(Tuning.goldCoins + 1) PARA", "+\(Tuning.goldCoins + 1) COINS"), color: Palette.yellow, size: 22,
                   at: CGPoint(x: 270, y: surfaceY + 180), rotation: 0.08, shadowColor: nil)
             SoundFX.shared.play(.coin)
         case .hard:
             runCoins += Tuning.hardCoins
             score += Tuning.hardBonus
-            popup("ZORLU +\(Tuning.hardBonus)", color: Palette.orange, size: 26,
+            popup(L("ZORLU +\(Tuning.hardBonus)", "TOUGH +\(Tuning.hardBonus)"), color: Palette.orange, size: 26,
                   at: CGPoint(x: 270, y: surfaceY + 180), rotation: 0.08, shadowColor: nil)
             if case .hard = level?.goal { addProgress(1) }
         case .plate:
             score += Tuning.plateBonus
-            popup("LEVHA +\(Tuning.plateBonus)", color: Palette.cream, size: 24,
+            popup(L("LEVHA +\(Tuning.plateBonus)", "PLATE +\(Tuning.plateBonus)"), color: Palette.cream, size: 24,
                   at: CGPoint(x: 270, y: surfaceY + 180), rotation: 0.08, shadowColor: nil)
         default:
             break
@@ -778,7 +778,7 @@ final class GameScene: SKScene, ObservableObject {
         _ = nail.hit(1)
         nail.bounced = true
         sparks(at: CGPoint(x: hammerX, y: surfaceY + 36), count: 5, color: Palette.green)
-        popup("BOİNG!", color: Palette.green, size: 26, at: CGPoint(x: 270, y: surfaceY + 170), rotation: 0.1, shadowColor: nil)
+        popup(L("BOİNG!", "BOING!"), color: Palette.green, size: 26, at: CGPoint(x: 270, y: surfaceY + 170), rotation: 0.1, shadowColor: nil)
         let jump = SKAction.group([
             .moveBy(x: Tuning.springBack, y: 0, duration: 0.28),
             .sequence([.moveBy(x: 0, y: 46, duration: 0.14), .moveBy(x: 0, y: -46, duration: 0.14)])
@@ -804,7 +804,7 @@ final class GameScene: SKScene, ObservableObject {
             onEvent?(.streak(streak))
         }
         score += Tuning.bombBonus
-        popup("BUM! +\(Tuning.bombBonus)", color: Palette.orange, size: 40, at: CGPoint(x: 250, y: surfaceY + 200), rotation: 0.1)
+        popup(L("BUM! +\(Tuning.bombBonus)", "BOOM! +\(Tuning.bombBonus)"), color: Palette.orange, size: 40, at: CGPoint(x: 250, y: surfaceY + 200), rotation: 0.1)
         let ring = SKShapeNode(circleOfRadius: 30)
         ring.position = CGPoint(x: hammerX, y: surfaceY + 20)
         ring.strokeColor = Palette.orange
@@ -828,13 +828,13 @@ final class GameScene: SKScene, ObservableObject {
         wobble(nail)
         if nail.kind == .bomb {
             redHits += 1
-            popup("BOMBA!", color: Palette.red, size: 38, at: CGPoint(x: 130, y: surfaceY + 160), shadowColor: Palette.redShadow)
+            popup(L("BOMBA!", "BOMB!"), color: Palette.red, size: 38, at: CGPoint(x: 130, y: surfaceY + 160), shadowColor: Palette.redShadow)
             loseLife(.bomb)
             return
         }
         weaks += 1
         score += Tuning.weakPoints
-        popup("EĞRİ", color: Palette.orange, size: 34, at: CGPoint(x: 130, y: surfaceY + 160))
+        popup(L("EĞRİ", "BENT"), color: Palette.orange, size: 34, at: CGPoint(x: 130, y: surfaceY + 160))
         popup("+\(Tuning.weakPoints)", color: Palette.muted, size: 22, at: CGPoint(x: 130, y: surfaceY + 122), rotation: -0.1, shadowColor: nil)
         shake(amount: 5)
         Haptics.good()
@@ -847,7 +847,7 @@ final class GameScene: SKScene, ObservableObject {
         nail.resolved = true
         nail.bend()
         wobble(nail)
-        popup("KIRMIZI!", color: Palette.red, size: 38, at: CGPoint(x: 130, y: surfaceY + 160), shadowColor: Palette.redShadow)
+        popup(L("KIRMIZI!", "RED!"), color: Palette.red, size: 38, at: CGPoint(x: 130, y: surfaceY + 160), shadowColor: Palette.redShadow)
         loseLife(.red)
     }
 
@@ -859,7 +859,7 @@ final class GameScene: SKScene, ObservableObject {
             .group([.moveBy(x: 0, y: 120, duration: 0.35), .fadeOut(withDuration: 0.35), .scale(to: 1.4, duration: 0.35)]),
             .removeFromParent()
         ]))
-        popup("+1 \(p.title.uppercased(with: Locale(identifier: "tr_TR")))", color: p.uiColor, size: 26,
+        popup("+1 \(p.title.uppercased(with: Locale(identifier: Lang.localeID)))", color: p.uiColor, size: 26,
               at: CGPoint(x: 195, y: surfaceY + 200), rotation: 0, shadowColor: nil)
         sparks(at: CGPoint(x: hammerX, y: surfaceY + 30), count: 8, color: p.uiColor)
         Haptics.success()
@@ -872,7 +872,7 @@ final class GameScene: SKScene, ObservableObject {
         woodHits += 1
         streak = 0
         multiplier = 1
-        popup("BOŞ", color: Palette.muted, size: 26, at: CGPoint(x: 130, y: surfaceY + 150), shadowColor: nil)
+        popup(L("BOŞ", "MISS"), color: Palette.muted, size: 26, at: CGPoint(x: 130, y: surfaceY + 150), shadowColor: nil)
         shake(amount: 3)
         Haptics.tap()
         SoundFX.shared.play(.good)
@@ -909,7 +909,7 @@ final class GameScene: SKScene, ObservableObject {
             zoneTime = 0
             slowTime = 0
             updateBoostDisplay()
-            popup("TAMAM!", color: Palette.green, size: 56, at: CGPoint(x: 195, y: surfaceY + 230), rotation: 0, shadowColor: Palette.greenShadow)
+            popup(L("TAMAM!", "DONE!"), color: Palette.green, size: 56, at: CGPoint(x: 195, y: surfaceY + 230), rotation: 0, shadowColor: Palette.greenShadow)
             Haptics.success()
             SoundFX.shared.play(.coin)
             run(.sequence([
@@ -933,9 +933,9 @@ final class GameScene: SKScene, ObservableObject {
         let options = Tuning.tempos.filter { abs($0 - tempoTarget) > 0.01 }
         guard let next = options.randomElement() else { return }
         if next > tempoTarget + 0.1 {
-            popup("HIZLANIYOR!", color: Palette.orange, size: 28, at: CGPoint(x: 195, y: bottomLabelY), rotation: 0, shadowColor: Palette.brownShadow)
+            popup(L("HIZLANIYOR!", "SPEEDING UP!"), color: Palette.orange, size: 28, at: CGPoint(x: 195, y: bottomLabelY), rotation: 0, shadowColor: Palette.brownShadow)
         } else if next < tempoTarget - 0.1 {
-            popup("YAVAŞLIYOR", color: Palette.green, size: 26, at: CGPoint(x: 195, y: bottomLabelY), rotation: 0, shadowColor: nil)
+            popup(L("YAVAŞLIYOR", "SLOWING DOWN"), color: Palette.green, size: 26, at: CGPoint(x: 195, y: bottomLabelY), rotation: 0, shadowColor: nil)
         }
         tempoTarget = next
     }

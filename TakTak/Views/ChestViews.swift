@@ -226,9 +226,9 @@ struct ChestPrizeTile: View {
 
     private var caption: String {
         switch prize {
-        case .coins: return "PARA"
-        case .stars: return "YILDIZ"
-        case .hammer: return "SÜRPRİZ ÇEKİÇ!"
+        case .coins: return L("PARA", "COINS")
+        case .stars: return L("YILDIZ", "STARS")
+        case .hammer: return L("SÜRPRİZ ÇEKİÇ!", "SURPRISE HAMMER!")
         }
     }
 
@@ -267,7 +267,7 @@ struct ChestOpenView: View {
                 .onTapGesture { if !opened { open() } }
 
             VStack(spacing: 0) {
-                DisplayTitle(text: opened ? "SANDIK AÇILDI!" : title, size: 34, depth: 4)
+                DisplayTitle(text: opened ? L("SANDIK AÇILDI!", "CHEST OPENED!") : title, size: 34, depth: 4)
                     .padding(.top, 20)
                     .contentTransition(.opacity)
 
@@ -277,10 +277,10 @@ struct ChestOpenView: View {
                     .scaleEffect(opened ? 1.0 : (pulse ? 1.04 : 0.97))
                     .onTapGesture { if !opened { open() } }
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(opened ? "Açık sandık" : "Sandığı aç")
+                    .accessibilityLabel(opened ? L("Açık sandık", "Open chest") : L("Sandığı aç", "Open the chest"))
 
                 if !opened {
-                    Text("Açmak için dokun")
+                    Text(L("Açmak için dokun", "Tap to open"))
                         .font(TKFont.black(18))
                         .foregroundStyle(Color.tkMuted)
                         .opacity(pulse ? 1 : 0.5)
@@ -301,7 +301,7 @@ struct ChestOpenView: View {
 
                 if opened && shown >= prizes.count {
                     Button(action: onDone) {
-                        Text("TOPLA")
+                        Text(L("TOPLA", "COLLECT"))
                             .font(TKFont.display(32))
                             .frame(height: 66)
                     }
