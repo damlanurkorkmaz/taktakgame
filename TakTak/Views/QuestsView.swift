@@ -205,6 +205,8 @@ struct QuestChestView: View {
     @State private var doubled = false
     @State private var loading = false
     @State private var adNotReady = false
+    @State private var opened = false
+    @State private var revealed = false
 
     var body: some View {
         ZStack {
@@ -223,11 +225,53 @@ struct QuestChestView: View {
                 DisplayTitle(text: "GÖREV SANDIĞI!", size: 36, depth: 4)
                     .padding(.top, 8)
 
-                ChestIcon()
-                    .scaleEffect(2.6)
-                    .frame(height: 130)
-                    .padding(.top, 8)
+                AnimatedChest(open: opened)
+                    .scaleEffect(revealed ? 0.62 : 0.85)
+                    .frame(height: revealed ? 140 : 190)
+                    .padding(.top, 4)
+                    .onTapGesture { openChest() }
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(opened ? "Açık sandık" : "Sandığı aç")
 
+                if !opened {
+                    Text("Açmak için dokun")
+                        .font(TKFont.black(17))
+                        .foregroundStyle(Color.tkMuted)
+                        .padding(.vertical, 14)
+                }
+
+                if revealed {
+                rewardsBlock
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
+            }
+            .padding(EdgeInsets(top: 24, leading: 22, bottom: 22, trailing: 22))
+            .foregroundStyle(Color.tkCream)
+            .background(RoundedRectangle(cornerRadius: 28).fill(Color.tkBg))
+            .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkPanel, lineWidth: 3))
+            .padding(20)
+        }
+        .alert("Reklam hazır değil", isPresented: $adNotReady) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text("Birkaç saniye sonra tekrar dene.")
+        }
+    }
+
+    private func openChest() {
+        guard !opened else { return }
+        Haptics.perfect()
+        SoundFX.shared.play(.drive)
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) { opened = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            SoundFX.shared.play(.coin)
+            Haptics.success()
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { revealed = true }
+        }
+    }
+
+    private var rewardsBlock: some View {
+            VStack(spacing: 0) {
                 HStack(spacing: 10) {
                     rewardTile(icon: AnyView(CoinIcon(size: 30)), value: "+\((doubled ? reward.coins * 2 : reward.coins).tk)", label: "para")
                     rewardTile(icon: AnyView(StarIcon(filled: true, size: 30)), value: "+\(reward.stars)", label: "yıldız")
@@ -305,17 +349,6 @@ struct QuestChestView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 12)
             }
-            .padding(EdgeInsets(top: 24, leading: 22, bottom: 22, trailing: 22))
-            .foregroundStyle(Color.tkCream)
-            .background(RoundedRectangle(cornerRadius: 28).fill(Color.tkBg))
-            .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkPanel, lineWidth: 3))
-            .padding(20)
-        }
-        .alert("Reklam hazır değil", isPresented: $adNotReady) {
-            Button("Tamam", role: .cancel) {}
-        } message: {
-            Text("Birkaç saniye sonra tekrar dene.")
-        }
     }
 
     private func double() {

@@ -36,8 +36,18 @@ struct LevelMapView: View {
     var onBack: () -> Void
     var onSelect: (Int) -> Void
 
-    @State private var toast: String?
+    @State private var chestPrizes: [ChestPrize]?
     private let rowH: CGFloat = 96
+    private let nodeH: CGFloat = 112
+
+    private func scrollToCurrent(_ proxy: ScrollViewProxy, animated: Bool) {
+        let target = store.currentLevel
+        if animated {
+            withAnimation(.easeInOut(duration: 0.4)) { proxy.scrollTo(target, anchor: .center) }
+        } else {
+            proxy.scrollTo(target, anchor: .center)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,15 +63,25 @@ struct LevelMapView: View {
                         ZStack(alignment: .topLeading) {
                             trail(width: w, total: total)
                             ForEach(Level.all) { level in
+                                let pt = point(level.number, width: w, total: total)
+                                // .position tüm alanı kapladığı için scrollTo hep ortaya (15. seviye) gidiyordu.
+                                // Sabit çerçeve + dış padding ile her düğümün gerçek yeri olur.
                                 node(level)
+                                    .frame(width: 120, height: nodeH)
                                     .id(level.number)
-                                    .position(point(level.number, width: w, total: total))
+                                    .padding(.leading, max(0, pt.x - 60))
+                                    .padding(.top, max(0, pt.y - nodeH / 2))
                             }
                         }
-                        .frame(width: w, height: total)
+                        .frame(width: w, height: total, alignment: .topLeading)
                     }
+                    .defaultScrollAnchor(.bottom)
                     .onAppear {
-                        proxy.scrollTo(store.currentLevel, anchor: .center)
+                        scrollToCurrent(proxy, animated: false)
+                        // İlk yerleşim bittikten sonra bir kez daha (bazı cihazlarda ilk çağrı erken kalıyor)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            scrollToCurrent(proxy, animated: false)
+                        }
                     }
                 }
             }
@@ -72,11 +92,12 @@ struct LevelMapView: View {
         }
         .foregroundStyle(Color.tkCream)
         .background(Color.tkBg.ignoresSafeArea())
-        .overlay(alignment: .bottom) {
-            if let toast {
-                Toast(text: toast)
-                    .padding(.bottom, 180)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+        .overlay {
+            if let prizes = chestPrizes {
+                ChestOpenView(title: "YILDIZ SANDIĞI", prizes: prizes) {
+                    withAnimation(.easeOut(duration: 0.2)) { chestPrizes = nil }
+                }
+                .transition(.opacity)
             }
         }
     }
@@ -287,14 +308,10 @@ struct LevelMapView: View {
     private func openChest() {
         let r = store.openChest()
         guard r.coins > 0 else { return }
-        Haptics.success()
-        SoundFX.shared.play(.coin)
-        var text = "Sandıktan \(r.coins) para çıktı!"
-        if let h = r.hammer { text += " Bir de \(h.title)!" }
-        withAnimation(.spring(duration: 0.3)) { toast = text }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-            withAnimation(.easeOut(duration: 0.25)) { toast = nil }
-        }
+        var prizes: [ChestPrize] = [.coins(r.coins)]
+        if let h = r.hammer { prizes.append(.hammer(h)) }
+        Haptics.tap()
+        withAnimation(.easeOut(duration: 0.2)) { chestPrizes = prizes }
     }
 }
 

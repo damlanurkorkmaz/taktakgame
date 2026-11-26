@@ -10,7 +10,7 @@ struct MenuView: View {
     var onQuests: () -> Void
 
     @State private var showSettings = false
-    @State private var showGCInfo = false
+    @State private var showRecords = false
 
     var body: some View {
         GeometryReader { geo in
@@ -32,7 +32,8 @@ struct MenuView: View {
                     .accessibilityLabel("\(store.totalStars) yıldız")
                     Spacer()
                     Button {
-                        if !GameCenterManager.shared.showLeaderboard() { showGCInfo = true }
+                        Haptics.tap()
+                        showRecords = true
                     } label: {
                         IconSquare(systemName: "trophy.fill")
                     }
@@ -111,10 +112,12 @@ struct MenuView: View {
                 .environmentObject(store)
                 .presentationDetents([.height(400)])
         }
-        .alert("Game Center", isPresented: $showGCInfo) {
-            Button("Tamam", role: .cancel) {}
-        } message: {
-            Text("Sıralamayı görmek için Ayarlar > Game Center'dan giriş yap. Sonsuz mod rekorların oraya kaydedilir.")
+        .sheet(isPresented: $showRecords) {
+            RecordsView()
+                .environmentObject(store)
+                .presentationDetents([.height(470)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color.tkBg)
         }
     }
 

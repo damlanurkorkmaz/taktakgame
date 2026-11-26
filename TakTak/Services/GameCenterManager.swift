@@ -9,21 +9,43 @@ final class GameCenterManager: NSObject, ObservableObject, GKGameCenterControlle
     static let shared = GameCenterManager()
     static let leaderboardID = "taktak_endless"
 
-    @Published private(set) var isAuthenticated = false
+    enum Status: Equatable {
+        case unknown
+        case signedIn(name: String)
+        /// Giriş ekranı hazır; kullanıcı isterse gösterilir
+        case needsLogin
+        case unavailable(String)
+    }
+
+    @Published private(set) var status: Status = .unknown
+    var isAuthenticated: Bool { GKLocalPlayer.local.isAuthenticated }
+
+    private var loginController: UIViewController?
+    private var handlerSet = false
 
     private override init() {
         super.init()
     }
 
-    /// Uygulama açılırken çağrılır; gerekirse Game Center giriş ekranını gösterir.
+    /// Uygulama açılırken bir kez çağrılır. Giriş ekranını hemen göstermez,
+    /// kullanıcı kupaya basınca gösterilmek üzere saklar.
     func authenticate() {
-        GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, _ in
+        guard !handlerSet else { return }
+        handlerSet = true
+        GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
             DispatchQueue.main.async {
-                if let vc = viewController, let root = AdsManager.topViewController() {
-                    root.present(vc, animated: true)
-                    return
+                guard let self else { return }
+                if let vc = viewController {
+                    self.loginController = vc
+                    self.status = .needsLogin
+                } else if GKLocalPlayer.local.isAuthenticated {
+                    self.loginController = nil
+                    self.status = .signedIn(name: GKLocalPlayer.local.displayName)
+                } else if let error {
+                    self.status = .unavailable(Self.describe(error))
+                } else {
+                    self.status = .unavailable("Game Center'a giriş yapılmadı.")
                 }
-                self?.isAuthenticated = GKLocalPlayer.local.isAuthenticated
             }
         }
     }
@@ -34,13 +56,22 @@ final class GameCenterManager: NSObject, ObservableObject, GKGameCenterControlle
                                   leaderboardIDs: [Self.leaderboardID]) { _ in }
     }
 
-    /// Sıralamayı gösterir. Giriş yapılmamışsa false döner.
+    /// Saklanan Game Center giriş ekranını gösterir.
+    @discardableResult
+    func presentLogin() -> Bool {
+        guard let vc = loginController, let root = AdsManager.topViewController() else { return false }
+        loginController = nil
+        root.present(vc, animated: true)
+        return true
+    }
+
+    /// Game Center sıralamasını gösterir. Giriş yoksa giriş ekranını açmayı dener.
     @discardableResult
     func showLeaderboard() -> Bool {
-        guard GKLocalPlayer.local.isAuthenticated, let root = AdsManager.topViewController() else {
-            authenticate()
-            return false
+        guard GKLocalPlayer.local.isAuthenticated else {
+            return presentLogin()
         }
+        guard let root = AdsManager.topViewController() else { return false }
         let vc = GKGameCenterViewController(leaderboardID: Self.leaderboardID, playerScope: .global, timeScope: .allTime)
         vc.gameCenterDelegate = self
         root.present(vc, animated: true)
@@ -49,5 +80,19 @@ final class GameCenterManager: NSObject, ObservableObject, GKGameCenterControlle
 
     func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
         gameCenterViewController.dismiss(animated: true)
+    }
+
+    private static func describe(_ error: Error) -> String {
+        let code = (error as NSError).code
+        switch GKError.Code(rawValue: code) {
+        case .notAuthenticated, .cancelled, .userDenied:
+            return "Game Center'a giriş yapılmadı. iPhone Ayarlar > Game Center'dan giriş yapabilirsin."
+        case .gameUnrecognized, .notSupported:
+            return "Bu sürümde Game Center henüz etkin değil."
+        case .communicationsFailure, .connectionTimeout:
+            return "Game Center'a bağlanılamadı. İnterneti kontrol et."
+        default:
+            return "Game Center şu an kullanılamıyor."
+        }
     }
 }

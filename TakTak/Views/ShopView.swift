@@ -9,6 +9,9 @@ struct ShopView: View {
     @State private var detail: HammerVariant?
     @State private var toast: String?
     @State private var toastTask: Task<Void, Never>?
+    @State private var celebration: PurchaseCelebration.Item?
+    @State private var celebrationTask: Task<Void, Never>?
+    @State private var celebrationKey = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,6 +60,13 @@ struct ShopView: View {
                 Toast(text: toast)
                     .padding(.bottom, 40)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .overlay {
+            if let item = celebration {
+                PurchaseCelebration(item: item) { dismissCelebration() }
+                    .id(celebrationKey)
+                    .transition(.opacity)
             }
         }
         .sheet(item: $detail) { h in
@@ -162,8 +172,7 @@ struct ShopView: View {
                 .foregroundStyle(Color.tkGreen)
             Button {
                 if store.buyPowerup(p) {
-                    Haptics.success()
-                    SoundFX.shared.play(.coin)
+                    celebrate(.powerup(p))
                 } else {
                     Haptics.miss()
                     show("\((p.price - store.coins).tk) para daha lazım")
@@ -247,9 +256,11 @@ struct ShopView: View {
                         let outcome = await iap.purchase(product)
                         switch outcome {
                         case .success:
-                            Haptics.success()
-                            SoundFX.shared.play(.coin)
-                            show("Teşekkürler!")
+                            if product.id == StoreManager.ProductID.noAds {
+                                celebrate(.noAds)
+                            } else {
+                                celebrate(.coins(StoreManager.ProductID.coins(for: product.id)))
+                            }
                         case .pending:
                             show("Satın alma onay bekliyor")
                         case .failed:
@@ -287,9 +298,8 @@ struct ShopView: View {
         case .equipped:
             Haptics.tap()
         case .bought:
-            Haptics.success()
-            SoundFX.shared.play(.coin)
-            show("\(h.title) senin!")
+            // Detay sayfası kapanırken üst üste binmesin
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { celebrate(.hammer(h)) }
         case .notEnough(let missing):
             Haptics.miss()
             show("\(missing.tk) para daha lazım")
@@ -297,6 +307,24 @@ struct ShopView: View {
             Haptics.miss()
             show("Açmak için sonsuz modda \(need) puan yap")
         }
+    }
+
+    private func celebrate(_ item: PurchaseCelebration.Item) {
+        Haptics.success()
+        SoundFX.shared.play(.coin)
+        celebrationTask?.cancel()
+        celebrationKey += 1
+        withAnimation(.easeOut(duration: 0.15)) { celebration = item }
+        celebrationTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            dismissCelebration()
+        }
+    }
+
+    private func dismissCelebration() {
+        celebrationTask?.cancel()
+        withAnimation(.easeOut(duration: 0.25)) { celebration = nil }
     }
 
     private func show(_ text: String) {
@@ -429,5 +457,124 @@ struct HammerDetailSheet: View {
         .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 16).fill(Color.tkBg))
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(highlight ? Color.tkGreen : .clear, lineWidth: 3))
+    }
+}
+
+/// Satın alınca ekranın ortasında beliren "ALINDI!" kartı.
+struct PurchaseCelebration: View {
+    enum Item: Hashable {
+        case hammer(HammerVariant)
+        case powerup(Powerup)
+        case coins(Int)
+        case noAds
+    }
+
+    let item: Item
+    var onTap: () -> Void
+
+    @State private var appear = false
+    @State private var burst = false
+
+    var body: some View {
+        ZStack {
+            Color.tkDarkest.opacity(appear ? 0.7 : 0)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onTap)
+
+            ZStack {
+                // Etrafa saçılan paralar/yıldızlar
+                ForEach(0..<14, id: \.self) { i in
+                    let a = Double(i) / 14 * 2 * .pi
+                    let r: Double = 130 + Double(i % 3) * 18
+                    Group {
+                        if i.isMultiple(of: 2) { CoinIcon(size: 20) } else { StarIcon(filled: true, size: 18) }
+                    }
+                    .offset(x: burst ? cos(a) * r : 0, y: burst ? sin(a) * r : 0)
+                    .opacity(burst ? 0 : 1)
+                    .scaleEffect(burst ? 1.1 : 0.4)
+                }
+
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color(hex: 0x1C3A2E))
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(Color.tkGreen))
+                        .overlay(Circle().strokeBorder(Color.tkOutline, lineWidth: 3))
+
+                    icon
+                        .frame(height: 110)
+
+                    DisplayTitle(text: "ALINDI!", size: 40, depth: 4)
+
+                    Text(subtitle)
+                        .font(TKFont.black(17))
+                        .multilineTextAlignment(.center)
+                    Text(detail)
+                        .font(TKFont.extraBold(14))
+                        .foregroundStyle(Color.tkMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .foregroundStyle(Color.tkCream)
+                .padding(.horizontal, 26)
+                .padding(.vertical, 22)
+                .frame(maxWidth: 300)
+                .background(RoundedRectangle(cornerRadius: 28).fill(Color.tkBg))
+                .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.tkGreen, lineWidth: 4))
+                .scaleEffect(appear ? 1 : 0.5)
+                .opacity(appear ? 1 : 0)
+            }
+            .allowsHitTesting(false)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Satın alındı. \(subtitle)")
+        .onAppear {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.62)) { appear = true }
+            withAnimation(.easeOut(duration: 0.9).delay(0.1)) { burst = true }
+        }
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        switch item {
+        case .hammer(let h):
+            Image(uiImage: HammerArt.image(h, size: 110, angle: -28, shadow: false))
+        case .powerup(let p):
+            Image(systemName: p.icon)
+                .font(.system(size: 54, weight: .bold))
+                .foregroundStyle(p.color)
+                .frame(width: 100, height: 100)
+                .background(RoundedRectangle(cornerRadius: 28).fill(Color.tkPanel))
+        case .coins:
+            HStack(spacing: -18) {
+                CoinIcon(size: 56).offset(y: 10)
+                CoinIcon(size: 70)
+                CoinIcon(size: 56).offset(y: 10)
+            }
+        case .noAds:
+            Image(systemName: "nosign")
+                .font(.system(size: 54, weight: .bold))
+                .foregroundStyle(Color.tkOrange)
+                .frame(width: 100, height: 100)
+                .background(RoundedRectangle(cornerRadius: 28).fill(Color.tkPanel))
+        }
+    }
+
+    private var subtitle: String {
+        switch item {
+        case .hammer(let h): return "\(h.title) senin!"
+        case .powerup(let p): return "+1 \(p.title)"
+        case .coins(let n): return "+\(n.tk) para"
+        case .noAds: return "Reklamlar kapandı"
+        }
+    }
+
+    private var detail: String {
+        switch item {
+        case .hammer: return "Takılı çekicin oldu. Hemen dene!"
+        case .powerup: return "Seviyeden önce ya da oyun içinde kullanabilirsin."
+        case .coins: return "Paran hesabına eklendi. Teşekkürler!"
+        case .noAds: return "Ödülleri artık reklam izlemeden alırsın. Teşekkürler!"
+        }
     }
 }
